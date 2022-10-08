@@ -1,0 +1,80 @@
+Description: <short summary of the patch>
+ TODO: Put a short summary on the line above and replace this paragraph
+ with a longer explanation of this change. Complete the meta-information
+ with other relevant fields (see below for details). To make it easier, the
+ information below has been extracted from the changelog. Adjust it or drop
+ it.
+ .
+ grub2 (2.02+dfsg1+deepin2-1+deepin) unstable; urgency=low
+ .
+   * ['Autobuild release-candidate: f037c9b9ddfca4a7ea79100b3280a17a444b3c69']
+Author: shuttle <shuttle@deepin.com>
+
+---
+The information above should follow the Patch Tagging Guidelines, please
+checkout http://dep.debian.net/deps/dep3/ to learn about the format. Here
+are templates for supplementary fields that you might want to add:
+
+Origin: <vendor|upstream|other>, <url of original patch>
+Bug: <url in upstream bugtracker>
+Bug-Debian: https://bugs.debian.org/<bugnumber>
+Bug-Ubuntu: https://launchpad.net/bugs/<bugnumber>
+Forwarded: <no|not-needed|url proving that it has been forwarded>
+Reviewed-By: <name and email of someone who approved the patch>
+Last-Update: 2020-01-03
+
+--- grub2-2.02+dfsg1+deepin2.orig/util/grub.d/10_linux.in
++++ grub2-2.02+dfsg1+deepin2/util/grub.d/10_linux.in
+@@ -17,6 +17,17 @@ set -e
+ # You should have received a copy of the GNU General Public License
+ # along with GRUB.  If not, see <http://www.gnu.org/licenses/>.
+ 
++arch=$(uname -m)
++if [ x"$arch" = x"mips64" ];then
++        GRUB_DISABLE_RECOVERY=true
++  GRUB_START=boot
++  cat <<EOF >/boot/boot.cfg
++default 0
++timeout 3
++showmenu 0
++EOF
++fi
++
+ prefix="@prefix@"
+ exec_prefix="@exec_prefix@"
+ datarootdir="@datarootdir@"
+@@ -152,6 +152,8 @@ linux_entry ()
+
+   # Use ELILO's generic "efifb" when it's known to be available.
+   # FIXME: We need an interface to select vesafb in case efifb can't be used.
++  arch=$(uname -m)
++  if [ "$arch" != "mips64" ];then
+   if [ "x$GRUB_GFXPAYLOAD_LINUX" = x ]; then
+       echo "	load_video" | sed "s/^/$submenu_indentation/"
+   else
+@@ -165,6 +165,7 @@ linux_entry ()
+   fi
+ 
+   echo "	insmod gzio" | sed "s/^/$submenu_indentation/"
++  fi
+   echo "	if [ x\$grub_platform = xxen ]; then insmod xzio; insmod lzopio; fi" | sed "s/^/$submenu_indentation/"
+ 
+   if [ x$dirname = x/ ]; then
+@@ -396,6 +396,17 @@ while [ "x$list" != "x" ] ; do
+                 "${GRUB_CMDLINE_LINUX_RECOVERY} ${GRUB_CMDLINE_LINUX}"
+   fi
+ 
++if [ x"$arch" = x"mips64" ];then                                              
++echo "                                                                        
++title ${OS} ${version}                                                        
++        kernel /dev/fs/ext2@wd0$linux                                         
++        initrd /dev/fs/ext2@wd0${dirname}/$initrd                             
++        args console=tty loglevel=0 locales=zh_CN.UTF-8 ${GRUB_CMDLINE_LINUX} ${GRUB_CMDLINE_LINUX_DEFAULT} root=UUID=$GRUB_DEVICE_UUID " >> ${dirname}/boot.cfg
++    if grep -wqs "${dirname}" /proc/mounts ; then
++        sed -e 's@boot/@@g' -i ${dirname}/boot.cfg
++    fi
++fi 
++
+   list=`echo $list | tr ' ' '\n' | fgrep -vx "$linux" | tr '\n' ' '`
+ done
+ 

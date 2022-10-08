@@ -1,0 +1,11 @@
+--- grub2-2.02+dfsg1.orig/util/grub.d/00_header.in
++++ grub2-2.02+dfsg1/util/grub.d/00_header.in
+@@ -230,7 +230,7 @@ EOF
+     cat << EOF
+     font="`make_system_path_relative_to_its_root "${font_path}"`"
+ fi
+-
++set gfxmode=auto
+ if loadfont \$font ; then
+ EOF
+ 	    else

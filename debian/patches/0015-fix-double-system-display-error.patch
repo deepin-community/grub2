@@ -1,0 +1,12 @@
+Index: grub2-2.02.24.2/util/grub.d/30_os-prober.in
+===================================================================
+--- grub2-2.02.24.2.orig/util/grub.d/30_os-prober.in
++++ grub2-2.02.24.2/util/grub.d/30_os-prober.in
+@@ -136,6 +136,7 @@ used_osprober_linux_ids=
+ wubi=
+ 
+ for OS in ${OSPROBED} ; do
++  OS="`echo ${OS} | sed -e 's/(20)//g'`"
+   DEVICE="`echo ${OS} | cut -d ':' -f 1`"
+   LONGNAME="`echo ${OS} | cut -d ':' -f 2 | tr '^' ' '`"
+   LABEL="`echo ${OS} | cut -d ':' -f 3 | tr '^' ' '`"

@@ -1,0 +1,32 @@
+--- grub2-2.02+dfsg1.orig/util/grub.d/10_linux.in
++++ grub2-2.02+dfsg1/util/grub.d/10_linux.in
+@@ -201,14 +201,6 @@ fi
+     fi
+     printf '%s\n' "${prepare_boot_cache}" | sed "s/^/$submenu_indentation/"
+   fi
+-  if [ x"$quiet_boot" = x0 ] || [ x"$type" != xsimple ]; then
+-    message="$(gettext_printf "Loading Linux %s ..." ${version})"
+-	if [ $ARCH_NAME != "loongson" ];then
+-    sed "s/^/$submenu_indentation/" << EOF
+-	echo	'$(echo "$message" | grub_quote)'
+-EOF
+-	fi
+-  fi
+   if test -d /sys/firmware/efi && test -e "${linux}.efi.signed"; then
+     sed "s/^/$submenu_indentation/" << EOF
+ 	linux	${rel_dirname}/${basename}.efi.signed root=${linux_root_device_thisversion} ro ${args}
+@@ -220,14 +220,6 @@ EOF
+   fi
+   if test -n "${initrd}" ; then
+     # TRANSLATORS: ramdisk isn't identifier. Should be translated.
+-    if [ x"$quiet_boot" = x0 ] || [ x"$type" != xsimple ]; then
+-      message="$(gettext_printf "Loading initial ramdisk ...")"
+-	  if [ $ARCH_NAME != "loongson" ];then
+-      sed "s/^/$submenu_indentation/" << EOF
+-	echo	'$(echo "$message" | grub_quote)'
+-EOF
+-	fi
+-    fi
+     initrd_path=
+     for i in ${initrd}; do
+       initrd_path="${initrd_path} ${rel_dirname}/${i}"

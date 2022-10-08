@@ -1,0 +1,44 @@
+Index: grub2-2.02.24.3/util/grub.d/00_header.in
+===================================================================
+--- grub2-2.02.24.3.orig/util/grub.d/00_header.in
++++ grub2-2.02.24.3/util/grub.d/00_header.in
+@@ -227,15 +227,7 @@ EOF
+ 	done
+ 	if [ -n "${font_path}" ] ; then
+     cat << EOF
+-if [ x\$feature_default_font_path = xy ] ; then
+-   font=unicode
+-else
+-EOF
+-                # Make the font accessible
+-		prepare_grub_to_access_device `${grub_probe} --target=device "${font_path}"`
+-    cat << EOF
+-    font="`make_system_path_relative_to_its_root "${font_path}"`"
+-fi
++font=unicode
+ set gfxmode=auto
+ if loadfont \$font ; then
+ EOF
+@@ -269,6 +269,22 @@ cat <<EOF
+ echo
+ fi
+ EOF
++
++if [ -z "$GRUB_FONT" ] ; then
++if [ -n "${font_path}" ] ; then
++    cat << EOF
++if [ x\$feature_default_font_path = xy ] ; then
++   font=unicode
++else
++EOF
++                # Make the font accessible
++		prepare_grub_to_access_device `${grub_probe} --target=device "${font_path}"`
++    cat << EOF
++    font="`make_system_path_relative_to_its_root "${font_path}"`"
++fi
++EOF
++fi
++fi
+ fi
+ 
+ case x${GRUB_TERMINAL_INPUT} in

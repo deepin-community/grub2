@@ -1,0 +1,53 @@
+Index: grub2/grub-core/normal/main.c
+===================================================================
+--- grub2.orig/grub-core/normal/main.c
++++ grub2/grub-core/normal/main.c
+@@ -38,6 +38,8 @@ GRUB_MOD_LICENSE ("GPLv3+");
+ 
+ #define GRUB_DEFAULT_HISTORY_SIZE	50
+ 
++int esc_flag;
++
+ static int nested_level = 0;
+ int grub_normal_exit_level = 0;
+ 
+@@ -262,6 +264,8 @@ grub_normal_execute (const char *config,
+   grub_menu_t menu = 0;
+   const char *prefix;
+ 
++reshow_menu:
++  esc_flag = 0;
+   if (! nested)
+     {
+       prefix = grub_env_get ("prefix");
+@@ -292,6 +296,9 @@ grub_normal_execute (const char *config,
+ 	    grub_normal_free_menu (menu);
+ 	}
+     }
++
++  if(esc_flag)
++    goto reshow_menu;
+ }
+ 
+ /* This starts the normal mode.  */
+Index: grub2/grub-core/normal/menu.c
+===================================================================
+--- grub2.orig/grub-core/normal/menu.c
++++ grub2/grub-core/normal/menu.c
+@@ -37,6 +37,8 @@
+    entry failing to boot.  */
+ #define DEFAULT_ENTRY_ERROR_DELAY_MS  2500
+ 
++extern int esc_flag;
++
+ grub_err_t (*grub_gfxmenu_try_hook) (int entry, grub_menu_t menu,
+ 				     int nested) = NULL;
+ 
+@@ -808,6 +810,7 @@ run_menu (grub_menu_t menu, int nested,
+ 	      return current_entry;
+ 
+ 	    case GRUB_TERM_ESC:
++          esc_flag = 1;
+ 	      if (nested)
+ 		{
+ 		  menu_fini ();

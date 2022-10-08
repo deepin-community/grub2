@@ -1,0 +1,31 @@
+Description: <short summary of the patch>
+ Do not set the value of lang in arrch64
+ .
+ grub2 (2.02.24.6-1+dde) unstable; urgency=medium
+ .
+Author: wangyouwan <wangyouwan@uniontech.com>
+
+---
+The information above should follow the Patch Tagging Guidelines, please
+checkout http://dep.debian.net/deps/dep3/ to learn about the format. Here
+are templates for supplementary fields that you might want to add:
+
+Origin: <vendor|upstream|other>, <url of original patch>
+Bug: <url in upstream bugtracker>
+Bug-Debian: https://bugs.debian.org/<bugnumber>
+Bug-Ubuntu: https://launchpad.net/bugs/<bugnumber>
+Forwarded: <no|not-needed|url proving that it has been forwarded>
+Reviewed-By: <name and email of someone who approved the patch>
+Last-Update: 2021-01-04
+
+--- grub2-2.02.24.6.orig/util/grub.d/00_header.in
++++ grub2-2.02.24.6/util/grub.d/00_header.in
+@@ -248,7 +248,7 @@ fi
+ 
+ # Gettext variables and module
+ if [ "x${LANG}" != "xC" ] &&  [ "x${LANG}" != "x" ]; then
+-if [ $ARCH_NAME != "loongson" ];then
++if [ $ARCH_NAME != "loongson" ] && [ "$machine" != "aarch64" ];then
+   cat << EOF
+   set locale_dir=\$prefix/locale
+   set lang=${grub_lang}
