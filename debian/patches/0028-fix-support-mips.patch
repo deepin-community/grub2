@@ -24,9 +24,11 @@ Forwarded: <no|not-needed|url proving that it has been forwarded>
 Reviewed-By: <name and email of someone who approved the patch>
 Last-Update: 2022-02-21
 
---- grub2-2.04.14.orig/util/grub.d/10_linux.in
-+++ grub2-2.04.14/util/grub.d/10_linux.in
-@@ -413,7 +413,7 @@ if [ x"$arch" = x"mips64" ];then
+Index: grub2-2.06/util/grub.d/10_linux.in
+===================================================================
+--- grub2-2.06.orig/util/grub.d/10_linux.in
++++ grub2-2.06/util/grub.d/10_linux.in
+@@ -421,7 +421,7 @@ if [ x"$arch" = x"mips64" ];then
  echo "                                                                        
  title ${OS} ${version}                                                        
          kernel /dev/fs/ext2@wd0$linux                                         

@@ -1,0 +1,7 @@
+#!/bin/sh
+set -e
+
+if [ -e /usr/lib/grub/loongarch64-efi ]; then
+	cp -R /usr/lib/grub/loongarch64-efi /boot/efi/EFI/BOOT/
+fi
+exit 0

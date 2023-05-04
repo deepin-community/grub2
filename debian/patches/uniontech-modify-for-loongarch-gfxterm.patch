@@ -1,0 +1,24 @@
+Description: modify the gfxterm option
+Author: Angie.J <doucaixia@uniontech.com>
+Last-Update: 2022-07-18
+
+---
+
+--- grub2-2.04.23.orig/util/grub.d/00_header.in
++++ grub2-2.04.23/util/grub.d/00_header.in
+@@ -264,7 +264,6 @@ if [ $ARCH_NAME != "loongson" ] && [ "$m
+ EOF
+ fi
+ fi
+-fi
+ 
+ cat <<EOF
+ echo
+@@ -287,6 +286,7 @@ EOF
+ fi
+ fi
+ fi
++fi
+ 
+ case x${GRUB_TERMINAL_INPUT} in
+   x)

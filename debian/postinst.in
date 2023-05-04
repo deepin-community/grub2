@@ -632,7 +632,7 @@ case "$1" in
                   echo >&2
                   echo "  DEBIAN_FRONTEND=dialog dpkg --configure grub-pc" >&2
                   echo "  dpkg --configure -a" >&2
-                  exit 1 # noninteractive
+		  break
                 fi
               fi
             fi
@@ -663,7 +663,7 @@ case "$1" in
                   echo >&2
                   echo "  DEBIAN_FRONTEND=dialog dpkg --configure grub-pc" >&2
                   echo "  dpkg --configure -a" >&2
-                  exit 1 # noninteractive
+		  break
                 fi
               fi
             else
@@ -739,6 +739,11 @@ case "$1" in
 
       grub-yeeloong)
         run_grub_install --target=mipsel-loongson
+      ;;
+
+      grub-efi-loongarch64)
+        # run_grub_install --target=loongarch64-efi
+	grub-mkimage -v -o /EFI/BOOT/BOOTLOONGARCH.EFI  -O loongarch64-efi -d /usr/lib/grub/loongarch64-efi/ -p /boot/EFI ext2 fat iso9660 part_msdos part_gpt  configfile cat echo sleep test halt reboot minicmd search font loadenv linux
       ;;
 
       grub-xen)

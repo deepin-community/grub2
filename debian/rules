@@ -55,7 +55,7 @@ BUILD_PACKAGES := $(strip $(shell dh_listpackages))
 # REAL_PACKAGES build an actual grub variant (and therefore have both configure
 # and build stages). EXTRA_PACKAGES do not build grub but may depend on a
 # REAL_PACKAGE (and therefore only have a build stage)
-REAL_PACKAGES = grub-common grub-emu grub-pc grub-coreboot grub-efi-ia32 grub-efi-amd64 grub-efi-ia64 grub-efi-arm grub-efi-arm64 grub-ieee1275 grub-firmware-qemu grub-uboot grub-xen grub-yeeloong
+REAL_PACKAGES = grub-common grub-emu grub-pc grub-coreboot grub-efi-ia32 grub-efi-amd64 grub-efi-ia64 grub-efi-arm grub-efi-arm64 grub-ieee1275 grub-firmware-qemu grub-uboot grub-xen grub-yeeloong grub-efi-loongarch64
 EXTRA_PACKAGES = grub-rescue-pc grub-xen-host
 
 ifneq (,$(filter i386 amd64,$(DEB_HOST_ARCH_CPU)))
@@ -64,6 +64,8 @@ else ifneq (,$(filter powerpc ppc64 ppc64el sparc sparc64,$(DEB_HOST_ARCH_CPU)))
 COMMON_PLATFORM := ieee1275
 else ifeq (mipsel,$(DEB_HOST_ARCH_CPU))
 COMMON_PLATFORM := yeeloong
+else ifeq (loongarch64,$(DEB_HOST_ARCH_CPU))
+COMMON_PLATFORM := efi-loongarch64
 else ifeq (ia64,$(DEB_HOST_ARCH_CPU))
 COMMON_PLATFORM := efi-ia64
 else ifeq (arm,$(DEB_HOST_ARCH_CPU))
@@ -94,9 +96,6 @@ DEFAULT_TIMEOUT := 5
 FLICKER_FREE_BOOT := no
 endif
 
-confflags += \
-	--enable-quiet-boot
-
 ifeq ($(FLICKER_FREE_BOOT),yes)
 DEFAULT_HIDDEN_TIMEOUT := 0
 DEFAULT_HIDDEN_TIMEOUT_BOOL := true
@@ -120,6 +119,8 @@ debian/stamps/build-grub-efi-amd64 install/grub-efi-amd64: export SB_PLATFORM :=
 debian/stamps/build-grub-efi-amd64 install/grub-efi-amd64: export SB_EFI_NAME := x64
 debian/stamps/build-grub-efi-arm64 install/grub-efi-arm64: export SB_PLATFORM := arm64-efi
 debian/stamps/build-grub-efi-arm64 install/grub-efi-arm64: export SB_EFI_NAME := aa64
+debian/stamps/build-grub-efi-loongarch64 install/grub-efi-loongarch64: export SB_PLATFORM := loongarch64-efi
+debian/stamps/build-grub-efi-loongarch64 install/grub-efi-loongarch64: export SB_EFI_NAME := loongarch64-efi
 SB_PACKAGE :=
 ifeq (yes,$(shell dpkg-vendor --derives-from Ubuntu && echo yes))
 ifeq ($(DEB_HOST_ARCH),amd64)
@@ -171,6 +172,11 @@ override_dh_autoreconf:
 	env -u DH_OPTIONS GRUB_CONTRIB=$(CURDIR)/debian/grub-extras-enabled \
 		PYTHON=python3 \
 		dh_autoreconf -- ./autogen.sh
+# fix update-grub
+	if [ "loongarch64" = "$(DEB_HOST_ARCH_CPU)" ] ; then \
+		mv debian/update-grub.loongarch debian/update-grub; \
+	fi
+
 debian/stamps/configure-grub-common: debian/stamps/configure-grub-$(COMMON_PLATFORM)
 	touch $@
 
@@ -186,6 +192,10 @@ debian/stamps/configure-grub-none debian/stamps/configure-grub-pc debian/stamps/
 debian/stamps/configure-grub-efi-ia32:
 	mkdir -p debian/stamps obj/$(package)
 	dh_auto_configure -- $(confflags) --with-platform=efi --target=i386-pe --program-prefix=""
+	touch $@
+debian/stamps/configure-grub-efi-loongarch64:
+	mkdir -p debian/stamps $(subst debian/stamps/configure-,obj/,$@)
+	dh_auto_configure -- $(confflags) --program-prefix= --disable-dependency-tracking --with-platform=efi --disable-werror
 	touch $@
 debian/stamps/configure-grub-efi-amd64:
 	mkdir -p debian/stamps $(subst debian/stamps/configure-,obj/,$@)
@@ -216,7 +226,7 @@ debian/stamps/build-grub-none debian/stamps/build-grub-efi-ia64 debian/stamps/bu
 	dh_auto_build
 	touch $@
 
-debian/stamps/build-grub-efi-ia32 debian/stamps/build-grub-efi-amd64 debian/stamps/build-grub-efi-arm64: debian/stamps/build-%: debian/stamps/configure-% debian/stamps/build-grub-$(COMMON_PLATFORM)
+debian/stamps/build-grub-efi-ia32 debian/stamps/build-grub-efi-amd64 debian/stamps/build-grub-efi-loongarch64 debian/stamps/build-grub-efi-arm64: debian/stamps/build-%: debian/stamps/configure-% debian/stamps/build-grub-$(COMMON_PLATFORM)
 	dh_auto_build
 	grub_dir=`mktemp -d` ; \
 	sed -e "s/@DEB_VERSION@/$(deb_version)/g" \
@@ -352,7 +362,7 @@ install/grub-none:
 	# files.
 	mkdir -p debian/tmp-$(package)/usr/share/locale
 
-install/grub-pc install/grub-efi-ia32 install/grub-efi-amd64 install/grub-efi-ia64 install/grub-efi-arm install/grub-efi-arm64 install/grub-ieee1275 install/grub-coreboot install/grub-emu install/grub-uboot install/grub-xen install/grub-yeeloong:
+install/grub-pc install/grub-efi-ia32 install/grub-efi-amd64 install/grub-efi-ia64 install/grub-efi-arm install/grub-efi-arm64 install/grub-ieee1275 install/grub-coreboot install/grub-emu install/grub-uboot install/grub-xen install/grub-yeeloong install/grub-efi-loongarch64:
 	set -e ; \
 	if [ "$@" = "install/grub-xen" ] ; then \
 		dh_auto_install -Bobj/grub-xen-i386 --destdir=debian/tmp-$(package); \
@@ -497,7 +507,7 @@ endif
 
 NON_PLATFORM_PACKAGES = $(filter grub2 grub-linuxbios grub-efi grub-rescue-pc grub-firmware-qemu grub-xen-host,$(BUILD_PACKAGES))
 COMMON_PLATFORM_PACKAGES = $(filter grub-common grub2-common grub-theme-starfield grub-mount-udeb,$(BUILD_PACKAGES))
-PLATFORM_PACKAGES = $(filter grub-pc grub-efi-ia32 grub-efi-amd64 grub-efi-ia64 grub-efi-arm grub-efi-arm64 grub-ieee1275 grub-coreboot grub-uboot grub-xen grub-yeeloong,$(BUILD_PACKAGES))
+PLATFORM_PACKAGES = $(filter grub-pc grub-efi-ia32 grub-efi-amd64 grub-efi-ia64 grub-efi-arm grub-efi-arm64 grub-ieee1275 grub-coreboot grub-uboot grub-xen grub-yeeloong grub-efi-loongarch64,$(BUILD_PACKAGES))
 
 override_dh_install:
 ifneq (,$(NON_PLATFORM_PACKAGES))

@@ -63,8 +63,8 @@ DISTCLEANFILES =
 MAINTAINERCLEANFILES =
 # No GNU Make output.
 
-AM_CPPFLAGS =
-AM_CFLAGS =
+AM_CPPFLAGS = -pie -fPIC
+AM_CFLAGS = -pie  -fPIC
 
 noinst_LIBRARIES += libgnu.a
 

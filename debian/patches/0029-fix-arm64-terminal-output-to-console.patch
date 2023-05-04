@@ -12,11 +12,11 @@ Content-Transfer-Encoding: 8bit
  util/grub.d/00_header.in | 3 ++-
  1 file changed, 2 insertions(+), 1 deletion(-)
 
-diff --git a/util/grub.d/00_header.in b/util/grub.d/00_header.in
-index 8dde938..28d74a3 100644
---- a/util/grub.d/00_header.in
-+++ b/util/grub.d/00_header.in
-@@ -297,10 +297,11 @@ case x${GRUB_TERMINAL_OUTPUT} in
+Index: grub2-2.06/util/grub.d/00_header.in
+===================================================================
+--- grub2-2.06.orig/util/grub.d/00_header.in
++++ grub2-2.06/util/grub.d/00_header.in
+@@ -295,10 +295,11 @@ case x${GRUB_TERMINAL_OUTPUT} in
      # Just use the native terminal
    ;;
    x*)
@@ -29,6 +29,3 @@ index 8dde938..28d74a3 100644
  fi
    ;;
  esac
--- 
-2.20.1
-

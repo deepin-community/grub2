@@ -1,8 +1,28 @@
-grub2 (2.06-2+u001) UNRELEASED; urgency=medium
+grub2 (2.06.4-deepin1) unstable; urgency=medium
 
-  * update
+  * Non-maintainer upload.
+  * merge patches from v20 version
 
- -- GRUB Maintainers <pkg-grub-devel@alioth-lists.debian.net>  Mon, 13 Jun 2022 20:48:55 -0400
+ -- Ding Heng <dingheng@uniontech.com>  Wed, 02 Nov 2022 16:24:01 +0800
+
+grub2 (2.06.3-2+deepin1) unstable; urgency=medium
+
+  * Non-maintainer upload.
+  * update version
+
+ -- Ding Heng <dingheng@uniontech.com>  Mon, 31 Oct 2022 09:39:44 +0800
+
+grub2 (2.06.2-2+deepin1) unstable; urgency=medium
+
+  * fix build issue in OS with deepin vendor info
+
+ -- Ding Heng <dingheng@uniontech.com>  Fri, 28 Oct 2022 17:01:19 +0800
+
+grub2 (2.06.1-2+deepin1) unstable; urgency=medium
+
+  * update to 2.06.1-2 and enable os-prober
+
+ -- Ding Heng <dingheng@uniontech.com>  Thu, 27 Oct 2022 11:51:20 +0800
 
 grub2 (2.06-2) unstable; urgency=medium
 
