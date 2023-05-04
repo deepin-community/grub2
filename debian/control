@@ -26,8 +26,8 @@ Build-Depends: debhelper-compat (= 10),
  libfuse-dev (>= 2.8.4-1.4) [linux-any kfreebsd-any],
  fonts-dejavu-core,
  liblzma-dev,
- dosfstools [any-i386 any-amd64 any-arm64],
- mtools [any-i386 any-amd64 any-arm64],
+ dosfstools [any-i386 any-amd64 any-arm64 any-loongarch64],
+ mtools [any-i386 any-amd64 any-arm64 any-loongarch64],
  wamerican,
  libparted-dev [any-powerpc any-ppc64 any-ppc64el],
  pkg-config,
@@ -91,11 +91,11 @@ Package: grub2-common
 # Not Architecture: any because this package contains some things which are
 # only built when there is a real platform (e.g. grub-install), and the rest
 # of the package is not very useful in a utilities-only build.
-Architecture: any-i386 any-amd64 any-powerpc any-ppc64 any-ppc64el any-sparc any-sparc64 any-mipsel any-ia64 any-arm any-arm64
+Architecture: any-i386 any-amd64 any-powerpc any-ppc64 any-ppc64el any-sparc any-sparc64 any-mipsel any-ia64 any-arm any-arm64 ant-loongarch64
 Depends: grub-common (= ${binary:Version}), dpkg (>= 1.15.4) | install-info, ${shlibs:Depends}, ${misc:Depends}
-Replaces: grub, grub-legacy, ${legacy-doc-br}, grub-common (<< 1.99-1), grub-pc (<< 2.02+dfsg1-7), grub-coreboot (<< 2.02+dfsg1-7), grub-efi-ia32 (<< 2.02+dfsg1-7), grub-efi-amd64 (<< 2.02+dfsg1-7), grub-efi-ia64 (<< 2.02+dfsg1-7), grub-efi-arm (<< 2.02+dfsg1-7), grub-efi-arm64 (<< 2.02+dfsg1-7), grub-ieee1275 (<< 2.02+dfsg1-7), grub-uboot (<< 2.02+dfsg1-7), grub-xen (<< 2.02+dfsg1-7), grub-yeeloong (<< 2.02+dfsg1-7), grub-cloud-amd64 (<< 0.0.4)
+Replaces: grub, grub-legacy, ${legacy-doc-br}, grub-common (<< 1.99-1), grub-pc (<< 2.02+dfsg1-7), grub-coreboot (<< 2.02+dfsg1-7), grub-efi-ia32 (<< 2.02+dfsg1-7), grub-efi-amd64 (<< 2.02+dfsg1-7), grub-efi-ia64 (<< 2.02+dfsg1-7), grub-efi-arm (<< 2.02+dfsg1-7), grub-efi-arm64 (<< 2.02+dfsg1-7), grub-ieee1275 (<< 2.02+dfsg1-7), grub-uboot (<< 2.02+dfsg1-7), grub-xen (<< 2.02+dfsg1-7), grub-yeeloong (<< 2.02+dfsg1-7), grub-efi-loongarch64 (<< 2.02+dfsg1-7), grub-cloud-amd64 (<< 0.0.4)
 Conflicts: grub-legacy
-Breaks: grub (<< 0.97-54), ${legacy-doc-br}, shim (<< 0.9+1474479173.6c180c6-0ubuntu1~), grub-pc (<< 2.02+dfsg1-7), grub-coreboot (<< 2.02+dfsg1-7), grub-efi-ia32 (<< 2.02+dfsg1-7), grub-efi-amd64 (<< 2.02+dfsg1-7), grub-efi-ia64 (<< 2.02+dfsg1-7), grub-efi-arm (<< 2.02+dfsg1-7), grub-efi-arm64 (<< 2.02+dfsg1-7), grub-ieee1275 (<< 2.02+dfsg1-7), grub-uboot (<< 2.02+dfsg1-7), grub-xen (<< 2.02+dfsg1-7), grub-yeeloong (<< 2.02+dfsg1-7), grub-cloud-amd64 (<< 0.0.4)
+Breaks: grub (<< 0.97-54), ${legacy-doc-br}, shim (<< 0.9+1474479173.6c180c6-0ubuntu1~), grub-pc (<< 2.02+dfsg1-7), grub-coreboot (<< 2.02+dfsg1-7), grub-efi-ia32 (<< 2.02+dfsg1-7), grub-efi-amd64 (<< 2.02+dfsg1-7), grub-efi-ia64 (<< 2.02+dfsg1-7), grub-efi-arm (<< 2.02+dfsg1-7), grub-efi-arm64 (<< 2.02+dfsg1-7), grub-ieee1275 (<< 2.02+dfsg1-7), grub-uboot (<< 2.02+dfsg1-7), grub-xen (<< 2.02+dfsg1-7), grub-yeeloong (<< 2.02+dfsg1-7), grub-efi-loongarch64 (<< 2.02+dfsg1-7), grub-cloud-amd64 (<< 0.0.4)
 Multi-Arch: foreign
 Description: GRand Unified Bootloader (common files for version 2)
  This package contains common files shared by the distinct flavours of GRUB.
@@ -743,6 +743,56 @@ Package: grub-yeeloong
 Architecture: any-mipsel
 Pre-Depends: ${misc:Pre-Depends}
 Depends: ${shlibs:Depends}, ${misc:Depends}, grub2-common (= ${binary:Version}), grub-yeeloong-bin (= ${binary:Version}), ucf
+Replaces: grub-common (<< 1.98+20100617-2)
+Multi-Arch: foreign
+Description: GRand Unified Bootloader, version 2 (Yeeloong version)
+ GRUB is a portable, powerful bootloader.  This version of GRUB is based on a
+ cleaner design than its predecessors, and provides the following new features:
+ .
+  - Scripting in grub.cfg using BASH-like syntax.
+  - Support for modern partition maps such as GPT.
+  - Modular generation of grub.cfg via update-grub.  Packages providing GRUB
+    add-ons can plug in their own script rules and trigger updates by invoking
+    update-grub.
+ .
+ This is a dependency package for a version of GRUB that has been built for
+ use with the Lemote Yeeloong laptop.  Installing this package indicates
+ that this version of GRUB should be the active boot loader.
+
+Package: grub-efi-loongarch64-bin
+Architecture: any-loongarch64
+Depends: ${shlibs:Depends}, ${misc:Depends}, grub-common (= ${binary:Version})
+Replaces: grub-common (<< 1.98+20100617-2), grub-efi-loongarch64 (<< 1.99-1)
+Multi-Arch: foreign
+Description: GRand Unified Bootloader, version 2 (Yeeloong modules)
+ GRUB is a portable, powerful bootloader.  This version of GRUB is based on a
+ cleaner design than its predecessors, and provides the following new features:
+ .
+  - Scripting in grub.cfg using BASH-like syntax.
+  - Support for modern partition maps such as GPT.
+  - Modular generation of grub.cfg via update-grub.  Packages providing GRUB
+    add-ons can plug in their own script rules and trigger updates by invoking
+    update-grub.
+ .
+ This package contains GRUB modules that have been built for use with the
+ Lemote Yeeloong laptop.  It can be installed in parallel with other
+ flavours, but will not automatically install GRUB as the active boot loader
+ nor automatically update grub.cfg on upgrade unless grub-efi-loongarch64 is also
+ installed.
+
+Package: grub-efi-loongarch64-dbg
+Section: debug
+Architecture: any-loongarch64
+Depends: ${misc:Depends}, grub-efi-loongarch64-bin (= ${binary:Version}), grub-common (= ${binary:Version})
+Multi-Arch: foreign
+Description: GRand Unified Bootloader, version 2 (Yeeloong debug files)
+ This package contains debugging files for grub-efi-loongarch64-bin.  You only
+ need these if you are trying to debug GRUB using its GDB stub.
+
+Package: grub-efi-loongarch64
+Architecture: any-loongarch64
+Pre-Depends: ${misc:Pre-Depends}
+Depends: ${shlibs:Depends}, ${misc:Depends}, grub2-common (= ${binary:Version}), grub-efi-loongarch64-bin (= ${binary:Version}), ucf
 Replaces: grub-common (<< 1.98+20100617-2)
 Multi-Arch: foreign
 Description: GRand Unified Bootloader, version 2 (Yeeloong version)

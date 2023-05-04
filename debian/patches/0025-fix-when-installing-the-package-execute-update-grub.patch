@@ -19,9 +19,11 @@ Forwarded: <no|not-needed|url proving that it has been forwarded>
 Reviewed-By: <name and email of someone who approved the patch>
 Last-Update: 2021-02-05
 
---- grub2-2.02.24.9.orig/util/grub-mkconfig.in
-+++ grub2-2.02.24.9/util/grub-mkconfig.in
-@@ -294,6 +294,16 @@ cat << EOF
+Index: grub2-2.06/util/grub-mkconfig.in
+===================================================================
+--- grub2-2.06.orig/util/grub-mkconfig.in
++++ grub2-2.06/util/grub-mkconfig.in
+@@ -282,6 +282,16 @@ cat << EOF
  #
  EOF
  

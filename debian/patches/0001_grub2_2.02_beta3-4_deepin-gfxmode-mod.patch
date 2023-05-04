@@ -14,11 +14,11 @@ Forwarded: <no|not-needed|url proving that it has been forwarded>
 Reviewed-By: <name and email of someone who approved the patch>
 Last-Update: 2018-11-26
 
-Index: grub/grub-core/Makefile.core.def
+Index: grub2-2.06/grub-core/Makefile.core.def
 ===================================================================
---- grub.orig/grub-core/Makefile.core.def
-+++ grub/grub-core/Makefile.core.def
-@@ -1138,6 +1138,11 @@ module = {
+--- grub2-2.06.orig/grub-core/Makefile.core.def
++++ grub2-2.06/grub-core/Makefile.core.def
+@@ -1148,6 +1148,11 @@ module = {
  };
  
  module = {
@@ -30,10 +30,10 @@ Index: grub/grub-core/Makefile.core.def
    name = usbtest;
    common = commands/usbtest.c;
    enable = usb;
-Index: grub/grub-core/commands/deepin_gfxmode.c
+Index: grub2-2.06/grub-core/commands/deepin_gfxmode.c
 ===================================================================
 --- /dev/null
-+++ grub/grub-core/commands/deepin_gfxmode.c
++++ grub2-2.06/grub-core/commands/deepin_gfxmode.c
 @@ -0,0 +1,234 @@
 +#include <grub/mm.h>
 +#include <grub/env.h>
@@ -270,10 +270,10 @@ Index: grub/grub-core/commands/deepin_gfxmode.c
 +    grub_unregister_command(cmd_deepin_gfxmode);
 +}
 \ No newline at end of file
-Index: grub/grub-core/osdep/devmapper/getroot.c
+Index: grub2-2.06/grub-core/osdep/devmapper/getroot.c
 ===================================================================
---- grub.orig/grub-core/osdep/devmapper/getroot.c
-+++ grub/grub-core/osdep/devmapper/getroot.c
+--- grub2-2.06.orig/grub-core/osdep/devmapper/getroot.c
++++ grub2-2.06/grub-core/osdep/devmapper/getroot.c
 @@ -26,6 +26,7 @@
  
  #include <sys/stat.h>
@@ -282,10 +282,10 @@ Index: grub/grub-core/osdep/devmapper/getroot.c
  #include <assert.h>
  #include <fcntl.h>
  #include <unistd.h>
-Index: grub/grub-core/osdep/devmapper/hostdisk.c
+Index: grub2-2.06/grub-core/osdep/devmapper/hostdisk.c
 ===================================================================
---- grub.orig/grub-core/osdep/devmapper/hostdisk.c
-+++ grub/grub-core/osdep/devmapper/hostdisk.c
+--- grub2-2.06.orig/grub-core/osdep/devmapper/hostdisk.c
++++ grub2-2.06/grub-core/osdep/devmapper/hostdisk.c
 @@ -4,6 +4,7 @@
  #include <grub/partition.h>
  #include <grub/msdos_partition.h>
@@ -294,10 +294,10 @@ Index: grub/grub-core/osdep/devmapper/hostdisk.c
  #include <grub/err.h>
  #include <grub/emu/misc.h>
  #include <grub/emu/hostdisk.h>
-Index: grub/grub-core/osdep/linux/getroot.c
+Index: grub2-2.06/grub-core/osdep/linux/getroot.c
 ===================================================================
---- grub.orig/grub-core/osdep/linux/getroot.c
-+++ grub/grub-core/osdep/linux/getroot.c
+--- grub2-2.06.orig/grub-core/osdep/linux/getroot.c
++++ grub2-2.06/grub-core/osdep/linux/getroot.c
 @@ -21,6 +21,7 @@
  
  #include <sys/stat.h>
@@ -306,10 +306,10 @@ Index: grub/grub-core/osdep/linux/getroot.c
  #include <assert.h>
  #include <fcntl.h>
  #include <unistd.h>
-Index: grub/grub-core/osdep/unix/getroot.c
+Index: grub2-2.06/grub-core/osdep/unix/getroot.c
 ===================================================================
---- grub.orig/grub-core/osdep/unix/getroot.c
-+++ grub/grub-core/osdep/unix/getroot.c
+--- grub2-2.06.orig/grub-core/osdep/unix/getroot.c
++++ grub2-2.06/grub-core/osdep/unix/getroot.c
 @@ -21,6 +21,7 @@
  
  #include <sys/stat.h>
@@ -318,10 +318,10 @@ Index: grub/grub-core/osdep/unix/getroot.c
  #include <assert.h>
  #include <fcntl.h>
  #include <unistd.h>
-Index: grub/grub-core/script/yylex.l
+Index: grub2-2.06/grub-core/script/yylex.l
 ===================================================================
---- grub.orig/grub-core/script/yylex.l
-+++ grub/grub-core/script/yylex.l
+--- grub2-2.06.orig/grub-core/script/yylex.l
++++ grub2-2.06/grub-core/script/yylex.l
 @@ -29,6 +29,7 @@
  #pragma GCC diagnostic ignored "-Wmissing-prototypes"
  #pragma GCC diagnostic ignored "-Wmissing-declarations"

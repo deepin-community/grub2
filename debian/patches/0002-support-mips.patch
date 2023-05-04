@@ -23,8 +23,10 @@ Forwarded: <no|not-needed|url proving that it has been forwarded>
 Reviewed-By: <name and email of someone who approved the patch>
 Last-Update: 2020-01-03
 
---- grub2-2.02+dfsg1+deepin2.orig/util/grub.d/10_linux.in
-+++ grub2-2.02+dfsg1+deepin2/util/grub.d/10_linux.in
+Index: grub2-2.06/util/grub.d/10_linux.in
+===================================================================
+--- grub2-2.06.orig/util/grub.d/10_linux.in
++++ grub2-2.06/util/grub.d/10_linux.in
 @@ -17,6 +17,17 @@ set -e
  # You should have received a copy of the GNU General Public License
  # along with GRUB.  If not, see <http://www.gnu.org/licenses/>.
@@ -43,8 +45,8 @@ Last-Update: 2020-01-03
  prefix="@prefix@"
  exec_prefix="@exec_prefix@"
  datarootdir="@datarootdir@"
-@@ -152,6 +152,8 @@ linux_entry ()
-
+@@ -152,6 +163,8 @@ linux_entry ()
+ 
    # Use ELILO's generic "efifb" when it's known to be available.
    # FIXME: We need an interface to select vesafb in case efifb can't be used.
 +  arch=$(uname -m)
@@ -52,7 +54,7 @@ Last-Update: 2020-01-03
    if [ "x$GRUB_GFXPAYLOAD_LINUX" = x ]; then
        echo "	load_video" | sed "s/^/$submenu_indentation/"
    else
-@@ -165,6 +165,7 @@ linux_entry ()
+@@ -165,6 +178,7 @@ linux_entry ()
    fi
  
    echo "	insmod gzio" | sed "s/^/$submenu_indentation/"
@@ -60,7 +62,7 @@ Last-Update: 2020-01-03
    echo "	if [ x\$grub_platform = xxen ]; then insmod xzio; insmod lzopio; fi" | sed "s/^/$submenu_indentation/"
  
    if [ x$dirname = x/ ]; then
-@@ -396,6 +396,17 @@ while [ "x$list" != "x" ] ; do
+@@ -404,6 +418,17 @@ while [ "x$list" != "x" ] ; do
                  "${GRUB_CMDLINE_LINUX_RECOVERY} ${GRUB_CMDLINE_LINUX}"
    fi
  

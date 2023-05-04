@@ -1,8 +1,8 @@
 Index: grub2/grub-core/normal/main.c
 ===================================================================
---- grub2.orig/grub-core/normal/main.c
-+++ grub2/grub-core/normal/main.c
-@@ -38,6 +38,8 @@ GRUB_MOD_LICENSE ("GPLv3+");
+--- grub2.orig/grub-core/normal/main.c	2022-11-01 10:27:51.743867092 +0800
++++ grub2/grub-core/normal/main.c	2022-11-01 10:27:51.743867092 +0800
+@@ -39,6 +39,8 @@
  
  #define GRUB_DEFAULT_HISTORY_SIZE	50
  
@@ -11,7 +11,7 @@ Index: grub2/grub-core/normal/main.c
  static int nested_level = 0;
  int grub_normal_exit_level = 0;
  
-@@ -262,6 +264,8 @@ grub_normal_execute (const char *config,
+@@ -263,6 +265,8 @@
    grub_menu_t menu = 0;
    const char *prefix;
  
@@ -20,7 +20,7 @@ Index: grub2/grub-core/normal/main.c
    if (! nested)
      {
        prefix = grub_env_get ("prefix");
-@@ -292,6 +296,9 @@ grub_normal_execute (const char *config,
+@@ -293,6 +297,9 @@
  	    grub_normal_free_menu (menu);
  	}
      }
@@ -32,8 +32,8 @@ Index: grub2/grub-core/normal/main.c
  /* This starts the normal mode.  */
 Index: grub2/grub-core/normal/menu.c
 ===================================================================
---- grub2.orig/grub-core/normal/menu.c
-+++ grub2/grub-core/normal/menu.c
+--- grub2.orig/grub-core/normal/menu.c	2022-11-01 10:27:51.743867092 +0800
++++ grub2/grub-core/normal/menu.c	2022-11-01 10:27:51.743867092 +0800
 @@ -37,6 +37,8 @@
     entry failing to boot.  */
  #define DEFAULT_ENTRY_ERROR_DELAY_MS  2500
@@ -43,7 +43,7 @@ Index: grub2/grub-core/normal/menu.c
  grub_err_t (*grub_gfxmenu_try_hook) (int entry, grub_menu_t menu,
  				     int nested) = NULL;
  
-@@ -808,6 +810,7 @@ run_menu (grub_menu_t menu, int nested,
+@@ -788,6 +790,7 @@
  	      return current_entry;
  
  	    case GRUB_TERM_ESC:

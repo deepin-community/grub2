@@ -1,5 +1,7 @@
---- grub2-2.02+dfsg1.orig/util/grub-mkconfig_lib.in
-+++ grub2-2.02+dfsg1/util/grub-mkconfig_lib.in
+Index: grub2-2.06/util/grub-mkconfig_lib.in
+===================================================================
+--- grub2-2.06.orig/util/grub-mkconfig_lib.in
++++ grub2-2.06/util/grub-mkconfig_lib.in
 @@ -14,12 +14,19 @@
  # You should have received a copy of the GNU General Public License
  # along with GRUB.  If not, see <http://www.gnu.org/licenses/>.
@@ -53,8 +55,10 @@
  
    if [ x$GRUB_ENABLE_CRYPTODISK = xy ]; then
        for uuid in `"${grub_probe}" --device $@ --target=cryptodisk_uuid`; do
---- grub2-2.02+dfsg1.orig/util/grub.d/00_header.in
-+++ grub2-2.02+dfsg1/util/grub.d/00_header.in
+Index: grub2-2.06/util/grub.d/00_header.in
+===================================================================
+--- grub2-2.06.orig/util/grub.d/00_header.in
++++ grub2-2.06/util/grub.d/00_header.in
 @@ -17,6 +17,12 @@ set -e
  # You should have received a copy of the GNU General Public License
  # along with GRUB.  If not, see <http://www.gnu.org/licenses/>.
@@ -68,8 +72,8 @@
  prefix="@prefix@"
  exec_prefix="@exec_prefix@"
  datarootdir="@datarootdir@"
-@@ -31,9 +31,11 @@ export TEXTDOMAINDIR="@localedir@"
-
+@@ -31,9 +37,11 @@ export TEXTDOMAINDIR="@localedir@"
+ 
  # Do this as early as possible, since other commands might depend on it.
  # (e.g. the `loadfont' command might need lvm or raid modules)
 +if [ $ARCH_NAME != "loongson" ];then
@@ -80,7 +84,7 @@
  
  if [ "x${GRUB_DEFAULT}" = "x" ] ; then GRUB_DEFAULT=0 ; fi
  if [ "x${GRUB_DEFAULT}" = "xsaved" ] ; then GRUB_DEFAULT='${saved_entry}' ; fi
-@@ -232,22 +232,27 @@ EOF
+@@ -232,22 +240,27 @@ EOF
  	    fi
  	fi
  
@@ -108,7 +112,7 @@
  fi
  EOF
  fi
-@@ -274,7 +274,7 @@ EOF
+@@ -274,7 +287,7 @@ EOF
    ;;
  esac
  
@@ -117,8 +121,10 @@
      if [ "x$GRUB_THEME" != x ] && [ -f "$GRUB_THEME" ] \
  	&& is_path_readable_by_grub "$GRUB_THEME"; then
  	gettext_printf "Found theme: %s\n" "$GRUB_THEME" >&2
---- grub2-2.02+dfsg1.orig/util/grub.d/10_illumos.in
-+++ grub2-2.02+dfsg1/util/grub.d/10_illumos.in
+Index: grub2-2.06/util/grub.d/10_illumos.in
+===================================================================
+--- grub2-2.06.orig/util/grub.d/10_illumos.in
++++ grub2-2.06/util/grub.d/10_illumos.in
 @@ -17,6 +17,12 @@ set -e
  # You should have received a copy of the GNU General Public License
  # along with GRUB.  If not, see <http://www.gnu.org/licenses/>.
@@ -145,8 +151,10 @@
  }
  EOF
 +fi
---- grub2-2.02+dfsg1.orig/util/grub.d/10_linux.in
-+++ grub2-2.02+dfsg1/util/grub.d/10_linux.in
+Index: grub2-2.06/util/grub.d/10_linux.in
+===================================================================
+--- grub2-2.06.orig/util/grub.d/10_linux.in
++++ grub2-2.06/util/grub.d/10_linux.in
 @@ -17,6 +17,12 @@ set -e
  # You should have received a copy of the GNU General Public License
  # along with GRUB.  If not, see <http://www.gnu.org/licenses/>.
@@ -160,7 +168,7 @@
  arch=$(uname -m)
  if [ x"$arch" = x"mips64" ];then
          GRUB_DISABLE_RECOVERY=true
-@@ -177,9 +177,13 @@ linux_entry ()
+@@ -177,9 +183,13 @@ linux_entry ()
        echo "	gfxmode \$linux_gfx_mode" | sed "s/^/$submenu_indentation/"
    fi
  
@@ -174,7 +182,7 @@
  
    if [ x$dirname = x/ ]; then
      if [ -z "${prepare_root_cache}" ]; then
-@@ -194,9 +194,11 @@ linux_entry ()
+@@ -194,9 +204,11 @@ linux_entry ()
    fi
    if [ x"$quiet_boot" = x0 ] || [ x"$type" != xsimple ]; then
      message="$(gettext_printf "Loading Linux %s ..." ${version})"
@@ -186,7 +194,7 @@
    fi
    if test -d /sys/firmware/efi && test -e "${linux}.efi.signed"; then
      sed "s/^/$submenu_indentation/" << EOF
-@@ -211,9 +211,11 @@ EOF
+@@ -211,9 +223,11 @@ EOF
      # TRANSLATORS: ramdisk isn't identifier. Should be translated.
      if [ x"$quiet_boot" = x0 ] || [ x"$type" != xsimple ]; then
        message="$(gettext_printf "Loading initial ramdisk ...")"
@@ -198,8 +206,10 @@
      fi
      initrd_path=
      for i in ${initrd}; do
+Index: grub2-2.06/util/grub.d/10_linux.in.orig
+===================================================================
 --- /dev/null
-+++ grub2-2.02+dfsg1/util/grub.d/10_linux.in.orig
++++ grub2-2.06/util/grub.d/10_linux.in.orig
 @@ -0,0 +1,396 @@
 +#! /bin/sh
 +set -e
@@ -597,8 +607,10 @@
 +fi
 +
 +echo "$title_correction_code"
---- grub2-2.02+dfsg1.orig/util/grub.d/10_xnu.in
-+++ grub2-2.02+dfsg1/util/grub.d/10_xnu.in
+Index: grub2-2.06/util/grub.d/10_xnu.in
+===================================================================
+--- grub2-2.06.orig/util/grub.d/10_xnu.in
++++ grub2-2.06/util/grub.d/10_xnu.in
 @@ -17,6 +17,12 @@ set -e
  # You should have received a copy of the GNU General Public License
  # along with GRUB.  If not, see <http://www.gnu.org/licenses/>.
@@ -628,8 +640,10 @@
  }
  
  OSXUUID="`${grub_probe} --target=fs_uuid --device ${GRUB_DEVICE} 2> /dev/null`"
---- grub2-2.02+dfsg1.orig/util/grub.d/30_os-prober.in
-+++ grub2-2.02+dfsg1/util/grub.d/30_os-prober.in
+Index: grub2-2.06/util/grub.d/30_os-prober.in
+===================================================================
+--- grub2-2.06.orig/util/grub.d/30_os-prober.in
++++ grub2-2.06/util/grub.d/30_os-prober.in
 @@ -17,6 +17,12 @@ set -e
  # You should have received a copy of the GNU General Public License
  # along with GRUB.  If not, see <http://www.gnu.org/licenses/>.
@@ -643,7 +657,7 @@
  prefix="@prefix@"
  exec_prefix="@exec_prefix@"
  datarootdir="@datarootdir@"
-@@ -71,6 +77,7 @@ menuentry '$(echo "${LONGNAME} $bitstr $
+@@ -74,6 +80,7 @@ menuentry '$(echo "${LONGNAME} $bitstr $
  EOF
  	save_default_entry | grub_add_tab
  	prepare_grub_to_access_device ${DEVICE} | grub_add_tab
@@ -651,7 +665,7 @@
  	cat << EOF
          load_video
          set do_resume=0
-@@ -121,6 +128,7 @@ EOF
+@@ -124,6 +131,7 @@ EOF
          fi
  }
  EOF

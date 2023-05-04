@@ -23,8 +23,10 @@ Forwarded: <no|not-needed|url proving that it has been forwarded>
 Reviewed-By: <name and email of someone who approved the patch>
 Last-Update: 2022-04-20
 
---- grub2-2.04.17.orig/util/grub.d/00_header.in
-+++ grub2-2.04.17/util/grub.d/00_header.in
+Index: grub2-2.06/util/grub.d/00_header.in
+===================================================================
+--- grub2-2.06.orig/util/grub.d/00_header.in
++++ grub2-2.06/util/grub.d/00_header.in
 @@ -23,6 +23,13 @@ case "$machine" in
      *) ARCH_NAME="$machine" ;;
  esac
@@ -48,7 +50,7 @@ Last-Update: 2022-04-20
  cat <<EOF
      echo
  EOF
-@@ -305,6 +312,13 @@ EOF
+@@ -303,6 +310,13 @@ EOF
  
  fi
  fi
