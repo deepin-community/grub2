@@ -1,3 +1,9 @@
+grub2 (2.06.4-deepin2) unstable; urgency=medium
+
+  * change gcc version to 13
+
+ -- Chang Yang <yangchang@deepin.org>  Mon, 22 Jan 2024 14:24:01 +0800
+
 grub2 (2.06.4-deepin1) unstable; urgency=medium
 
   * Non-maintainer upload.
