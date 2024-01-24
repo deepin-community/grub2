@@ -45,8 +45,8 @@ set_default_theme(){
 			;;
 		*)
 			# Set the traditional Debian blue theme.
-			echo "${1}set menu_color_normal=white/black"
-			echo "${1}set menu_color_highlight=white/black"
+			echo "${1}set menu_color_normal=cyan/blue"
+			echo "${1}set menu_color_highlight=white/blue"
 			;;
 	esac
 }
