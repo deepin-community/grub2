@@ -1,9 +1,8 @@
-From 0bd31f4c7468f0b42ff6673f47112b9167c6381c Mon Sep 17 00:00:00 2001
-From: Colin Watson <cjwatson@ubuntu.com>
-Date: Mon, 13 Jan 2014 12:13:22 +0000
+From: Julian Andres Klode <julian.klode@canonical.com>
+Date: Wed, 19 Jul 2023 12:15:02 +0200
 Subject: Install signed images if UEFI Secure Boot is enabled
 MIME-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
+Content-Type: text/plain; charset="utf-8"
 Content-Transfer-Encoding: 8bit
 
 Author: Stéphane Graber <stgraber@ubuntu.com>
@@ -11,15 +10,15 @@ Author: Steve Langasek <steve.langasek@ubuntu.com>
 Author: Linn Crosetto <linn@hpe.com>
 Author: Mathieu Trudel-Lapierre <cyphermox@ubuntu.com>
 Forwarded: no
-Last-Update: 2021-09-24
+Last-Update: 2023-01-15
 
 Patch-Name: install-signed.patch
 ---
- util/grub-install.c | 212 ++++++++++++++++++++++++++++++++------------
- 1 file changed, 153 insertions(+), 59 deletions(-)
+ util/grub-install.c | 220 ++++++++++++++++++++++++++++++++++++----------------
+ 1 file changed, 155 insertions(+), 65 deletions(-)
 
 diff --git a/util/grub-install.c b/util/grub-install.c
-index 48e2d3779..f49c78d0b 100644
+index c36a286..db378d7 100644
 --- a/util/grub-install.c
 +++ b/util/grub-install.c
 @@ -80,6 +80,7 @@ static char *label_color;
@@ -71,7 +70,7 @@ index 48e2d3779..f49c78d0b 100644
    {0, 0, 0, 0, 0, 0}
  };
  
-@@ -833,7 +852,8 @@ main (int argc, char *argv[])
+@@ -849,7 +868,8 @@ main (int argc, char *argv[])
  {
    int is_efi = 0;
    const char *efi_distributor = NULL;
@@ -81,10 +80,10 @@ index 48e2d3779..f49c78d0b 100644
    char **grub_devices;
    grub_fs_t grub_fs;
    grub_device_t grub_dev = NULL;
-@@ -1103,6 +1123,39 @@ main (int argc, char *argv[])
-       */
-       char *t;
-       efi_distributor = bootloader_id;
+@@ -1145,6 +1165,43 @@ main (int argc, char *argv[])
+ 	efi_distributor = "ubuntu";
+       else if (strcmp (efi_distributor, "devuan") == 0)
+ 	efi_distributor = "debian";
 +      switch (platform)
 +	{
 +	case GRUB_INSTALL_PLATFORM_I386_EFI:
@@ -107,6 +106,10 @@ index 48e2d3779..f49c78d0b 100644
 +	  efi_suffix = "aa64";
 +	  efi_suffix_upper = "AA64";
 +	  break;
++	case GRUB_INSTALL_PLATFORM_LOONGARCH64_EFI:
++	  efi_suffix = "loongarch64";
++	  efi_suffix_upper = "LOONGARCH64";
++	  break;
 +	case GRUB_INSTALL_PLATFORM_RISCV32_EFI:
 +	  efi_suffix = "riscv32";
 +	  efi_suffix_upper = "RISCV32";
@@ -121,7 +124,7 @@ index 48e2d3779..f49c78d0b 100644
        if (removable)
  	{
  	  /* The specification makes stricter requirements of removable
-@@ -1111,66 +1164,16 @@ main (int argc, char *argv[])
+@@ -1153,72 +1210,16 @@ main (int argc, char *argv[])
  	     must have a specific file name depending on the architecture.
  	  */
  	  efi_distributor = "BOOT";
@@ -141,6 +144,9 @@ index 48e2d3779..f49c78d0b 100644
 -	      break;
 -	    case GRUB_INSTALL_PLATFORM_ARM64_EFI:
 -	      efi_file = "BOOTAA64.EFI";
+-	      break;
+-	    case GRUB_INSTALL_PLATFORM_LOONGARCH64_EFI:
+-	      efi_file = "BOOTLOONGARCH64.EFI";
 -	      break;
 -	    case GRUB_INSTALL_PLATFORM_RISCV32_EFI:
 -	      efi_file = "BOOTRISCV32.EFI";
@@ -178,6 +184,9 @@ index 48e2d3779..f49c78d0b 100644
 -	    case GRUB_INSTALL_PLATFORM_ARM64_EFI:
 -	      efi_file = "grubaa64.efi";
 -	      break;
+-	    case GRUB_INSTALL_PLATFORM_LOONGARCH64_EFI:
+-	      efi_file = "grubloongarch64.efi";
+-	      break;
 -	    case GRUB_INSTALL_PLATFORM_RISCV32_EFI:
 -	      efi_file = "grubriscv32.efi";
 -	      break;
@@ -192,8 +201,8 @@ index 48e2d3779..f49c78d0b 100644
  	}
        t = grub_util_path_concat (3, efidir, "EFI", efi_distributor);
        free (efidir);
-@@ -1376,14 +1379,41 @@ main (int argc, char *argv[])
- 	}
+@@ -1437,14 +1438,38 @@ main (int argc, char *argv[])
+               debug_image);
      }
  
 -  if (!have_abstractions)
@@ -208,10 +217,7 @@ index 48e2d3779..f49c78d0b 100644
 +      {
 +	char *dir = xasprintf ("%s-signed", grub_install_source_directory);
 +	char *signed_image;
-+	if (removable)
-+	  signed_image = xasprintf ("gcd%s.efi.signed", efi_suffix);
-+	else
-+	  signed_image = xasprintf ("grub%s.efi.signed", efi_suffix);
++	signed_image = xasprintf ("grub%s.efi.signed", efi_suffix);
 +	efi_signed = grub_util_path_concat (2, dir, signed_image);
 +	break;
 +      }
@@ -235,8 +241,8 @@ index 48e2d3779..f49c78d0b 100644
 +	  || uefi_secure_boot)
  	{
  	  char *uuid = NULL;
- 	  /*  generic method (used on coreboot and ata mod).  */
-@@ -1941,7 +1971,71 @@ main (int argc, char *argv[])
+ 
+@@ -2024,7 +2049,72 @@ main (int argc, char *argv[])
      case GRUB_INSTALL_PLATFORM_IA64_EFI:
        {
  	char *dst = grub_util_path_concat (2, efidir, efi_file);
@@ -289,8 +295,9 @@ index 48e2d3779..f49c78d0b 100644
 +						    fb_signed);
 +		fb_dst = grub_util_path_concat (2, efidir,
 +						    fb_file);
-+		grub_install_copy_file (fb_src,
-+					fb_dst, 0);
++		if (!removable)
++		  grub_install_copy_file (fb_src,
++					  fb_dst, 0);
 +		free (fb_src);
 +		free (fb_dst);
 +	      }

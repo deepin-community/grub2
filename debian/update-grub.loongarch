@@ -1,9 +1,0 @@
-#!/bin/sh
-set -e
-grub-mkconfig -o /boot/grub/grub.cfg "$@"
-if [ -e /boot/efi/EFI ];then
-   cp -f /boot/grub/grub.cfg /boot/efi/EFI/BOOT/
-fi
-if [ -e /boot/efi/BOOT ];then
-   cp -f /boot/grub/grub.cfg /boot/efi/BOOT/EFI/
-fi
