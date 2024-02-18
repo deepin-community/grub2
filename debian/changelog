@@ -1,3 +1,9 @@
+grub2 (2.12-1deepin1) unstable; urgency=medium
+
+  * Enable EFI for loong64
+
+ -- Chang Yang <yangchang@deepin.org>  Sun, 18 Feb 2024 11:28:56 +0800
+
 grub2 (2.12-1) unstable; urgency=medium
 
   [ Mate Kukri ]
