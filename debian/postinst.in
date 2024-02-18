@@ -719,7 +719,7 @@ case "$1" in
         fi
       ;;
 
-      grub-efi-ia32|grub-efi-amd64|grub-efi-ia64|grub-efi-arm|grub-efi-arm64|grub-efi-riscv64)
+      grub-efi-ia32|grub-efi-amd64|grub-efi-ia64|grub-efi-arm|grub-efi-arm64|grub-efi-riscv64|grub-efi-loong64)
         bootloader_id="$(config_item GRUB_DISTRIBUTOR | tr A-Z a-z | \
                          cut -d' ' -f1)"
         case $bootloader_id in
@@ -733,6 +733,7 @@ case "$1" in
           grub-efi-arm)   target=arm-efi ;;
           grub-efi-arm64) target=arm64-efi ;;
           grub-efi-riscv64) target=riscv64-efi ;;
+	  grub-efi-loong64) target=loong64-efi ;;
         esac
         if [ "$bootloader_id" ] && [ -e "/boot/grub/$target/core.efi" ]; then
           db_get grub2/force_efi_extra_removable

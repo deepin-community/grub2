@@ -65,7 +65,7 @@ BUILD_PACKAGES := $(strip $(shell dh_listpackages))
 # REAL_PACKAGES build an actual grub variant (and therefore have both configure
 # and build stages). EXTRA_PACKAGES do not build grub but may depend on a
 # REAL_PACKAGE (and therefore only have a build stage)
-REAL_PACKAGES = grub-common grub-emu grub-pc grub-coreboot grub-efi-ia32 grub-efi-amd64 grub-efi-ia64 grub-efi-arm grub-efi-arm64 grub-efi-riscv64 grub-ieee1275 grub-firmware-qemu grub-uboot grub-xen grub-yeeloong
+REAL_PACKAGES = grub-common grub-emu grub-pc grub-coreboot grub-efi-ia32 grub-efi-amd64 grub-efi-ia64 grub-efi-arm grub-efi-arm64 grub-efi-riscv64 grub-efi-loong64 grub-ieee1275 grub-firmware-qemu grub-uboot grub-xen grub-yeeloong
 EXTRA_PACKAGES = grub-rescue-pc grub-xen-host
 
 ifneq (,$(filter i386 amd64,$(DEB_HOST_ARCH_CPU)))
@@ -82,6 +82,8 @@ else ifeq (arm64,$(DEB_HOST_ARCH_CPU))
 COMMON_PLATFORM := efi-arm64
 else ifeq (riscv64,$(DEB_HOST_ARCH_CPU))
 COMMON_PLATFORM := efi-riscv64
+else ifeq (loong64,$(DEB_HOST_ARCH_CPU))
+COMMON_PLATFORM := efi-loong64
 else
 COMMON_PLATFORM := none
 BUILD_PACKAGES += grub-none
@@ -93,6 +95,8 @@ DEFAULT_TIMEOUT := 10
 ifeq ($(DEB_HOST_ARCH_CPU),ppc64el)
 FLICKER_FREE_BOOT := no
 else ifeq ($(DEB_HOST_ARCH_CPU),riscv64)
+FLICKER_FREE_BOOT := no
+else ifeq ($(DEB_HOST_ARCH_CPU),loong64)
 FLICKER_FREE_BOOT := no
 else
 FLICKER_FREE_BOOT := yes
@@ -207,7 +211,7 @@ debian/stamps/configure-grub-efi-amd64:
 	mkdir -p debian/stamps $(subst debian/stamps/configure-,obj/,$@)
 	dh_auto_configure -- $(confflags) --with-platform=efi --target=amd64-pe --program-prefix=""
 	touch $@
-debian/stamps/configure-grub-efi-ia64 debian/stamps/configure-grub-efi-arm debian/stamps/configure-grub-efi-arm64 debian/stamps/configure-grub-efi-riscv64:
+debian/stamps/configure-grub-efi-ia64 debian/stamps/configure-grub-efi-arm debian/stamps/configure-grub-efi-arm64 debian/stamps/configure-grub-efi-riscv64 debian/stamps/configure-grub-efi-loong64:
 	mkdir -p debian/stamps $(subst debian/stamps/configure-,obj/,$@)
 	dh_auto_configure -- $(confflags) --with-platform=efi
 	touch $@
@@ -228,7 +232,7 @@ debian/stamps/configure-grub-firmware-qemu:
 	dh_auto_configure -- $(confflags) --with-platform=qemu
 	touch $@
 
-debian/stamps/build-grub-none debian/stamps/build-grub-efi-ia64 debian/stamps/build-grub-efi-arm debian/stamps/build-grub-efi-riscv64 debian/stamps/build-grub-coreboot debian/stamps/build-grub-emu debian/stamps/build-grub-uboot debian/stamps/build-grub-xen-i386 debian/stamps/build-grub-xen-amd64 debian/stamps/build-grub-xen-pvh-i386 debian/stamps/build-grub-yeeloong: debian/stamps/build-%: debian/stamps/configure-%
+debian/stamps/build-grub-none debian/stamps/build-grub-efi-ia64 debian/stamps/build-grub-efi-arm debian/stamps/build-grub-efi-riscv64 debian/stamps/build-grub-efi-loong64 debian/stamps/build-grub-coreboot debian/stamps/build-grub-emu debian/stamps/build-grub-uboot debian/stamps/build-grub-xen-i386 debian/stamps/build-grub-xen-amd64 debian/stamps/build-grub-xen-pvh-i386 debian/stamps/build-grub-yeeloong: debian/stamps/build-%: debian/stamps/configure-%
 	dh_auto_build
 	touch $@
 
@@ -368,7 +372,7 @@ install/grub-none:
 	# files.
 	mkdir -p debian/tmp-$(package)/usr/share/locale
 
-install/grub-pc install/grub-efi-ia32 install/grub-efi-amd64 install/grub-efi-ia64 install/grub-efi-arm install/grub-efi-arm64 install/grub-efi-riscv64 install/grub-ieee1275 install/grub-coreboot install/grub-emu install/grub-uboot install/grub-xen install/grub-yeeloong:
+install/grub-pc install/grub-efi-ia32 install/grub-efi-amd64 install/grub-efi-ia64 install/grub-efi-arm install/grub-efi-arm64 install/grub-efi-riscv64 install/grub-efi-loong64 install/grub-ieee1275 install/grub-coreboot install/grub-emu install/grub-uboot install/grub-xen install/grub-yeeloong:
 	set -e ; \
 	if [ "$@" = "install/grub-xen" ] ; then \
 		dh_auto_install -Bobj/grub-xen-i386 --destdir=debian/tmp-$(package); \
@@ -513,7 +517,7 @@ endif
 
 NON_PLATFORM_PACKAGES = $(filter grub2 grub-linuxbios grub-efi grub-rescue-pc grub-firmware-qemu grub-xen-host,$(BUILD_PACKAGES))
 COMMON_PLATFORM_PACKAGES = $(filter grub-common grub2-common grub-theme-starfield grub-mount-udeb,$(BUILD_PACKAGES))
-PLATFORM_PACKAGES = $(filter grub-pc grub-efi-ia32 grub-efi-amd64 grub-efi-ia64 grub-efi-arm grub-efi-arm64 grub-efi-riscv64 grub-ieee1275 grub-coreboot grub-uboot grub-xen grub-yeeloong,$(BUILD_PACKAGES))
+PLATFORM_PACKAGES = $(filter grub-pc grub-efi-ia32 grub-efi-amd64 grub-efi-ia64 grub-efi-arm grub-efi-arm64 grub-efi-riscv64 grub-efi-loong64 grub-ieee1275 grub-coreboot grub-uboot grub-xen grub-yeeloong,$(BUILD_PACKAGES))
 
 override_dh_install:
 ifneq (,$(NON_PLATFORM_PACKAGES))
