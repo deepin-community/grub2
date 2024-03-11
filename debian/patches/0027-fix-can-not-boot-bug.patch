@@ -1,0 +1,10 @@
+--- a/util/grub.d/10_linux.in
++++ b/util/grub.d/10_linux.in
+@@ -200,6 +200,7 @@
+     done
+     sed "s/^/$submenu_indentation/" << EOF
+ 	initrd	$(echo $initrd_path)
++	boot 
+ EOF
+   fi
+   sed "s/^/$submenu_indentation/" << EOF

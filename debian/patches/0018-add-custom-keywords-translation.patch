@@ -1,0 +1,115 @@
+From 18f7b86008e062123bc35226bc767f1eb11384f9 Mon Sep 17 00:00:00 2001
+From: ut000745 <wangyouwan@uniontech.com>
+Date: Fri, 10 Jun 2022 20:59:23 +0800
+Subject: [PATCH] 1
+
+Change-Id: Id3ed8f3f2c423c94f14e8a9d24310f3e7d80e7b1
+---
+ po/LINGUAS                      |  2 +-
+ po/zh_CN.po                     |  9 +++++++++
+ po/zh_HK.po                     | 33 +++++++++++++++++++++++++++++++++
+ po/zh_TW.po                     |  9 ++++++++-
+ util/grub.d/30_uefi-firmware.in |  7 +++++--
+ 5 files changed, 56 insertions(+), 4 deletions(-)
+ create mode 100644 po/zh_HK.po
+
+--- a/po/LINGUAS
++++ b/po/LINGUAS
+@@ -1 +1 @@
+-ast ca da de de@hebrew de_CH en@arabic en@cyrillic en@greek en@hebrew en@piglatin en@quot eo es fi fr gl he hr hu id it ja ka ko lg lt nb nl pa pl pt pt_BR ro ru sl sr sv tr uk vi zh_CN zh_TW
++ast ca da de de@hebrew de_CH en@arabic en@cyrillic en@greek en@hebrew en@piglatin en@quot eo es fi fr gl he hr hu id it ja ka ko lg lt nb nl pa pl pt pt_BR ro ru sl sr sv tr uk vi zh_CN zh_TW zh_HK
+--- a/po/zh_CN.po
++++ b/po/zh_CN.po
+@@ -7439,6 +7439,15 @@
+ msgid "Advanced options for %s"
+ msgstr "%s 的高级选项"
+ 
++
++#: util/grub.d/15_linux_bar.in:40
++#~ msgid "UnionTech OS Restore"
++#~ msgstr "系统还原"
++
++#: util/grub.d/30_uefi-firmware.in:42
++#~ msgid "System Setup"
++#~ msgstr "系统设置"
++
+ #: util/grub.d/10_illumos.in:40
+ #, c-format
+ msgid "Loading kernel of Illumos ..."
+--- /dev/null
++++ b/po/zh_HK.po
+@@ -0,0 +1,33 @@
++# Traditional Chinese translation for grub.
++# Copyright (C) 2011 Free Software Foundation, Inc.
++# This file is distributed under the same license as the grub package.
++# Cheng-Chia Tseng <pswo10680@gmail.com>, 2011.
++#
++msgid ""
++msgstr ""
++"Project-Id-Version: grub 1.97+20110101\n"
++"Report-Msgid-Bugs-To: bug-grub@gnu.org\n"
++"POT-Creation-Date: 2017-04-25 16:28+0200\n"
++"PO-Revision-Date: 2011-07-25 02:26+0800\n"
++"Last-Translator: Cheng-Chia Tseng <pswo10680@gmail.com>\n"
++"Language-Team: Chinese (traditional) <zh-l10n@linux.org.tw>\n"
++"Language: zh_HK\n"
++"MIME-Version: 1.0\n"
++"Content-Type: text/plain; charset=UTF-8\n"
++"Content-Transfer-Encoding: 8bit\n"
++"X-Bugs: Report translation errors to the Language-Team address.\n"
++
++#. TRANSLATORS: %s is replaced with an OS name
++#: util/grub.d/10_hurd.in:164 util/grub.d/10_kfreebsd.in:225
++#: util/grub.d/10_linux.in:237 util/grub.d/10_netbsd.in:168
++#: util/grub.d/30_os-prober.in:254
++msgid "Advanced options for %s"
++msgstr "%s 的高級選項"
++
++#: util/grub.d/15_linux_bar.in:40
++msgid "UnionTech OS Restore"
++msgstr "系統還原"
++
++#: util/grub.d/30_uefi-firmware.in:42
++msgid "System Setup"
++msgstr "系統設置"
+--- a/po/zh_TW.po
++++ b/po/zh_TW.po
+@@ -7532,7 +7532,14 @@
+ #: util/grub.d/30_os-prober.in:269
+ #, c-format
+ msgid "Advanced options for %s"
+-msgstr ""
++msgstr "%s 的進階選項"
++
++msgid "UnionTech OS Restore"
++msgstr "系統還原"
++
++#: util/grub.d/30_uefi-firmware.in:42
++msgid "System Setup"
++msgstr "系統設定"
+ 
+ #: util/grub.d/10_illumos.in:40
+ #, fuzzy, c-format
+--- a/util/grub.d/30_uefi-firmware.in
++++ b/util/grub.d/30_uefi-firmware.in
+@@ -26,15 +26,18 @@
+ 
+ . "$pkgdatadir/grub-mkconfig_lib"
+ 
+-LABEL="UEFI Firmware Settings"
++LABEL="System Setup"
+ 
+ gettext_printf "Adding boot menu entry for UEFI Firmware Settings ...\n" >&2
+ 
++gettext_printf "System Setup" >/dev/null 2>&1
++gettext_printf "UnionTech OS Restore" >/dev/null 2>&1
++
+ cat << EOF
+ if [ "\$grub_platform" = "efi" ]; then
+ 	fwsetup --is-supported
+ 	if [ "\$?" = 0 ]; then
+-		menuentry '$LABEL' \$menuentry_id_option 'uefi-firmware' {
++                menuentry '$(gettext_printf "System Setup")' \$menuentry_id_option 'uefi-firmware' {
+ 			fwsetup
+ 		}
+ 	fi

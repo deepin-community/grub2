@@ -1,0 +1,42 @@
+From 2bcab06b91e482e8f37ec10f56055e82eb89375f Mon Sep 17 00:00:00 2001
+From: zhouzilong <zhouzilong@uniontech.com>
+Date: Tue, 28 Sep 2021 22:17:59 +0800
+Subject: [PATCH] make users parameter work
+
+ When the menu entries using the --users option, 
+ editing this menu also needs to use the specified user authentication.
+
+Change-Id: I4bc47a968beedc2a6ead1dd774b562ae206e236d
+---
+ grub-core/normal/auth.c       | 2 +-
+ grub-core/normal/menu_entry.c | 8 +++++++-
+ 2 files changed, 8 insertions(+), 2 deletions(-)
+
+--- a/grub-core/normal/auth.c
++++ b/grub-core/normal/auth.c
+@@ -141,7 +141,7 @@
+ 	continue;
+ 
+       if ((userlist && grub_strword (userlist, user->name))
+-	  || (grub_strlen(userlist) == 0))
++	  || (userlist == NULL))
+ 	return 1;
+     }
+ 
+--- a/grub-core/normal/menu_entry.c
++++ b/grub-core/normal/menu_entry.c
+@@ -1253,7 +1253,13 @@
+   unsigned i;
+   grub_term_output_t term;
+ 
+-  err = grub_auth_check_authentication (NULL);
++  if (grub_strlen(entry->users) == 0)
++  {
++    err = grub_auth_check_authentication (NULL);
++  }else{
++    err = grub_auth_check_authentication (entry->users);
++  }
++  
+ 
+   if (err)
+     {
