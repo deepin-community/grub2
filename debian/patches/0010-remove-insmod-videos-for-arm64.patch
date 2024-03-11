@@ -1,0 +1,16 @@
+--- a/util/grub.d/00_header.in
++++ b/util/grub.d/00_header.in
+@@ -156,12 +156,7 @@
+ # with versions prior to introduction of all_video.mod
+ if [ "$machine" = "aarch64" ];then
+ cat <<EOF
+-    insmod efi_uga
+-    insmod ieee1275_fb
+-    insmod vbe
+-    insmod vga
+-    insmod video_bochs
+-    insmod video_cirrus
++    echo
+ EOF
+ else
+ cat <<EOF

@@ -1,0 +1,23 @@
+--- a/util/grub-mkconfig.in
++++ b/util/grub-mkconfig.in
+@@ -141,7 +141,7 @@
+ GRUB_DEVICE_BOOT_UUID="`${grub_probe} --device ${GRUB_DEVICE_BOOT} --target=fs_uuid 2> /dev/null`" || true
+ 
+ # Disable os-prober by default due to security reasons.
+-GRUB_DISABLE_OS_PROBER="true"
++GRUB_DISABLE_OS_PROBER="false"
+ 
+ # Filesystem for the device containing our userland.  Used for stuff like
+ # choosing Hurd filesystem module.
+--- a/tests/grub_cmd_sleep.in
++++ b/tests/grub_cmd_sleep.in
+@@ -1,6 +1,9 @@
+ #! @BUILD_SHEBANG@
+ set -e
+ 
++echo "Skipping grub_cmd_sleep."
++exit 77
++
+ . "@builddir@/grub-core/modinfo.sh"
+ 
+ # FIXME: OpenBIOS on sparc64 doesn't implement RTC

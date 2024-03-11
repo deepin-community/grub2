@@ -1,0 +1,40 @@
+Description: <get lang from locale >
+ TODO:The translation of the grub interface is fixed according to the settings when the installer is installed, and does not change with the user-level language settings 
+ .
+ grub2 (2.02.25-1+dde) unstable; urgency=medium
+ .
+   * get lang from locale
+Author: wangyouwan <wangyouwan@uniontech.com>
+
+---
+The information above should follow the Patch Tagging Guidelines, please
+checkout http://dep.debian.net/deps/dep3/ to learn about the format. Here
+are templates for supplementary fields that you might want to add:
+
+Origin: <vendor|upstream|other>, <url of original patch>
+Bug: <url in upstream bugtracker>
+Bug-Debian: https://bugs.debian.org/<bugnumber>
+Bug-Ubuntu: https://launchpad.net/bugs/<bugnumber>
+Forwarded: <no|not-needed|url proving that it has been forwarded>
+Reviewed-By: <name and email of someone who approved the patch>
+Last-Update: 2021-02-05
+
+--- a/util/grub-mkconfig.in
++++ b/util/grub-mkconfig.in
+@@ -286,6 +286,16 @@
+ #
+ EOF
+ 
++# get locale lang
++machine=`uname -m`
++if [ x"$machine" = x"x86_64" ]; then
++       if [ -f /etc/default/locale ]; then
++               lang=`cat /etc/default/locale | head -n +1 | awk -F '=' '{print $2}'`
++               export LANG=$lang
++       fi
++else
++	export LANG=C
++fi
+ 
+ for i in "${grub_mkconfig_dir}"/* ; do
+   case "$i" in

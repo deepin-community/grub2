@@ -1,0 +1,27 @@
+--- a/util/grub.d/00_header.in
++++ b/util/grub.d/00_header.in
+@@ -154,6 +154,16 @@
+ else
+ # If all_video.mod isn't available load all modules available
+ # with versions prior to introduction of all_video.mod
++if [ "$machine" = "aarch64" ];then
++cat <<EOF
++    insmod efi_uga
++    insmod ieee1275_fb
++    insmod vbe
++    insmod vga
++    insmod video_bochs
++    insmod video_cirrus
++EOF
++else
+ cat <<EOF
+   if [ x\$feature_all_video_module = xy ]; then
+     insmod all_video
+@@ -168,6 +178,7 @@
+   fi
+ EOF
+ fi
++fi
+ cat <<EOF
+ }
+ 
