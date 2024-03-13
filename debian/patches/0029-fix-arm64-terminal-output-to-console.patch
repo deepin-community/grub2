@@ -19,7 +19,7 @@ Content-Transfer-Encoding: 8bit
    ;;
    x*)
 -if [ $ARCH_NAME != "loongson" ];then
-+if [ $ARCH_NAME != "loongson" ] && [ "$machine" != "aarch64" ];then
++if [ "$machine" != "aarch64" ];then
      cat << EOF
  terminal_output ${GRUB_TERMINAL_OUTPUT}
  EOF

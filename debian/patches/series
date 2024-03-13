@@ -88,7 +88,8 @@ grub-install-removable-shim.patch
 uniontech0028-forbid-menu-edit.patch
 uniontech0029-make-users-parameter-work.patch
 uniontech0029-make-users-parameter-work-2.patch
-uniontech0032-bugfix-ignore-gfxterm-output.patch
-uniontech0033-enable-grub-background-on-huawei.patch
+#uniontech0032-bugfix-ignore-gfxterm-output.patch
+#uniontech0033-enable-grub-background-on-huawei.patch
 uniontech0034-enable-os-prober.patch
 fix-remove-system-setup-on-huawei-pc.patch
+uniontech0033-enable-grub-background-on-huawei-2

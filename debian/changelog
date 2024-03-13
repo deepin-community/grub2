@@ -1,3 +1,9 @@
+grub2 (2.12-1deepin3) unstable; urgency=medium
+
+  * remove loongarch64 patch.
+
+ -- LiChengGang <lichenggang@uniontech.com>  Wed, 13 Mar 2024 11:18:10 +0800
+
 grub2 (2.12-1deepin2) unstable; urgency=medium
 
   * Apply patches from deepin grub2 2.06
