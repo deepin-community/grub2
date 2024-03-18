@@ -1,0 +1,50 @@
+Description: Do not use fwsetup --is-supported
+ fwsetup --is-supported is new in grub 2.12
+Author: Tianyu Chen <sweetyfish@deepin.org>
+Origin: vendor
+Bug-Deepin: https://github.com/linuxdeepin/developer-center/issues/7523
+Forwarded: not-needed
+Last-Update: 2024-03-18
+---
+This patch header follows DEP-3: http://dep.debian.net/deps/dep3/
+--- a/util/grub.d/30_uefi-firmware.in
++++ b/util/grub.d/30_uefi-firmware.in
+@@ -33,22 +33,26 @@
+ 
+ . "$pkgdatadir/grub-mkconfig_lib"
+ 
+-LABEL="System Setup"
++EFI_VARS_DIR=/sys/firmware/efi/efivars
++EFI_GLOBAL_VARIABLE=8be4df61-93ca-11d2-aa0d-00e098032b8c
++OS_INDICATIONS="$EFI_VARS_DIR/OsIndicationsSupported-$EFI_GLOBAL_VARIABLE"
+ 
+-gettext_printf "Adding boot menu entry for UEFI Firmware Settings ...\n" >&2
++if [ -e "$OS_INDICATIONS" ] && \
++   [ "$(( $(printf 0x%x \'"$(cat $OS_INDICATIONS | cut -b5)"\') & 1 ))" = 1 ]; then
++  LABEL="UEFI Firmware Settings"
+ 
+-gettext_printf "System Setup" >/dev/null 2>&1
+-gettext_printf "UnionTech OS Restore" >/dev/null 2>&1
++  gettext_printf "Adding boot menu entry for UEFI Firmware Settings ...\n" >&2
+ 
+-if [ "x$hw_support" != x"true" ];then
+-cat << EOF
++  gettext_printf "System Setup" >/dev/null 2>&1
++  gettext_printf "UnionTech OS Restore" >/dev/null 2>&1
++
++  if [ "x$hw_support" != x"true" ];then
++    cat << EOF
+ if [ "\$grub_platform" = "efi" ]; then
+-	fwsetup --is-supported
+-	if [ "\$?" = 0 ]; then
+-                menuentry '$(gettext_printf "System Setup")' \$menuentry_id_option 'uefi-firmware' {
+-			fwsetup
+-		}
+-	fi
++menuentry '$LABEL' \$menuentry_id_option 'uefi-firmware' {
++        fwsetup
++}
+ fi
+ EOF
++  fi
+ fi

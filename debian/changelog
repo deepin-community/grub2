@@ -1,3 +1,10 @@
+grub2 (2.12-1deepin4) unstable; urgency=medium
+
+  * Do not use fwsetup --is-supported.
+    Ref: https://github.com/linuxdeepin/developer-center/issues/7523
+
+ -- Tianyu Chen <sweetyfish@deepin.org>  Mon, 18 Mar 2024 11:02:22 +0800
+
 grub2 (2.12-1deepin3) unstable; urgency=medium
 
   * remove loongarch64 patch.
