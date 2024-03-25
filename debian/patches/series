@@ -94,3 +94,5 @@ uniontech0034-enable-os-prober.patch
 fix-remove-system-setup-on-huawei-pc.patch
 uniontech0033-enable-grub-background-on-huawei-2
 revert-fwsetup-is-supported.patch
+# Revert "kern/efi/sb: Enforce verification of font files"
+kern-efi-sb-Enforce-verification-of-font-files.patch
