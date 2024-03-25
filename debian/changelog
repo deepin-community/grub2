@@ -1,3 +1,10 @@
+grub2 (2.12-1deepin5) unstable; urgency=medium
+
+  * Disable verification of font files.
+    Revert https://lists.gnu.org/archive/html/grub-devel/2022-11/msg00067.html.
+
+ -- Tianyu Chen <sweetyfish@deepin.org>  Mon, 25 Mar 2024 21:35:13 +0800
+
 grub2 (2.12-1deepin4) unstable; urgency=medium
 
   * Do not use fwsetup --is-supported.
