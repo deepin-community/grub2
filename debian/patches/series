@@ -96,3 +96,4 @@ uniontech0033-enable-grub-background-on-huawei-2
 revert-fwsetup-is-supported.patch
 # Revert "kern/efi/sb: Enforce verification of font files"
 kern-efi-sb-Enforce-verification-of-font-files.patch
+deepin-Also-install-x86_64-efi-to-grub-efi.patch
