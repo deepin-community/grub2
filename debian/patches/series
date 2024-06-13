@@ -97,3 +97,8 @@ revert-fwsetup-is-supported.patch
 # Revert "kern/efi/sb: Enforce verification of font files"
 kern-efi-sb-Enforce-verification-of-font-files.patch
 deepin-Also-install-x86_64-efi-to-grub-efi.patch
+# EFI path fix, useful for buggy firmware (such as Loongson) that do not treat
+# FAT ESPs as case-insensitive. Currently pre-upstream:
+#
+# https://lists.gnu.org/archive/html/grub-devel/2024-06/msg00101.html
+deepin/0001-util-grub-mkrescue-use-capitalised-paths-for-removab.patch
