@@ -1,3 +1,13 @@
+grub2 (2.12-1deepin7) unstable; urgency=medium
+
+  * grub-mkrescue: use upper-case paths for EFI images.
+    * This is needed to generate bootable ISOs on Loongson firmware.
+    * /efi/boot/bootloongarch64.efi => /EFI/BOOT/BOOTLOONGARCH64.EFI.
+    * This shouldn't cause problems with other architectures, AFAIK.
+  * See: https://lists.gnu.org/archive/html/grub-devel/2024-06/msg00101.html
+
+ -- Mingcong Bai <baimingcong@uniontech.com>  Thu, 13 Jun 2024 19:36:24 +0800
+
 grub2 (2.12-1deepin6) unstable; urgency=medium
 
   * x64: Also install signed efi to grub.efi.
