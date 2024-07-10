@@ -1,0 +1,46 @@
+From 99f85d8e5f0eddb7a7c3e2a61886b6f3e3e6d29c Mon Sep 17 00:00:00 2001
+From: chench <chench@hygon.cn>
+Date: Tue, 5 Dec 2023 13:37:16 +0800
+Subject: [PATCH 2/2] newfeature: tpcm: embed tpcm module into kernel.img by
+ default
+
+Signed-off-by: chench <chench@hygon.cn>
+Change-Id: I8bda0756a504894eb607b81e145750e8453737f0
+---
+ util/grub-install.c      | 4 ++++
+ util/grub-mkstandalone.c | 4 ++++
+ 2 files changed, 8 insertions(+)
+
+diff --git a/util/grub-install.c b/util/grub-install.c
+index 7dc5657..abaf8a2 100644
+--- a/util/grub-install.c
++++ b/util/grub-install.c
+@@ -1672,6 +1672,10 @@ main (int argc, char *argv[])
+   if (load_cfg_f)
+     fclose (load_cfg_f);
+ 
++  //TPCM
++  if (GRUB_INSTALL_PLATFORM_X86_64_EFI == platform)
++    grub_install_push_module ("tpcm_hygon");
++
+   char *imgfile = grub_util_path_concat (2, platdir,
+ 				       core_name);
+   char *prefix = xasprintf ("%s%s", prefix_drive ? : "",
+diff --git a/util/grub-mkstandalone.c b/util/grub-mkstandalone.c
+index 9009648..62209d2 100644
+--- a/util/grub-mkstandalone.c
++++ b/util/grub-mkstandalone.c
+@@ -374,6 +374,10 @@ main (int argc, char *argv[])
+   grub_install_push_module ("memdisk");
+   grub_install_push_module ("tar");
+ 
++  //TPCM
++  if (GRUB_INSTALL_PLATFORM_X86_64_EFI == plat)
++    grub_install_push_module ("tpcm_hygon");
++
+   grub_install_make_image_wrap (grub_install_source_directory,
+ 				"(memdisk)/boot/grub", output_image,
+ 				memdisk_img, NULL,
+-- 
+2.7.4
+
