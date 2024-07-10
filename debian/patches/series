@@ -108,3 +108,6 @@ deepin/0001-util-grub-mkrescue-use-capitalised-paths-for-removab.patch
 deepin/0002-probe-grub-device-for-overlay-as-root.patch
 reimplement_boot_counter.patch
 uniontech0035-block-terminal-output.patch
+
+deepin/0002-hygon-newfeature-tpcm-add-tpcm-support.patch
+deepin/0003-hygon-newfeature-tpcm-embed-tpcm-module-into-kernel.img-by.patch
