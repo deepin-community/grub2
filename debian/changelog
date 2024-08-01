@@ -1,3 +1,9 @@
+grub2 (2.12-1deepin10) unstable; urgency=medium
+
+  * reimplement boot_counter
+
+ -- ssk-wh <fanpengcheng@uniontech.com>  Wed, 14 Aug 2024 14:52:05 +0800
+
 grub2 (2.12-1deepin9) unstable; urgency=medium
 
   * set GRUB_DEVICE by env when root is overlayfs
