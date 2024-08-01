@@ -106,3 +106,4 @@ deepin/0001-util-grub-mkrescue-use-capitalised-paths-for-removab.patch
 0001-loongarch64-able-to-start-on-legacy-firmware.patch
 0001-grub-install-loongarch64-efi-also-install-BOOTLOONGA.patch
 deepin/0002-probe-grub-device-for-overlay-as-root.patch
+reimplement_boot_counter.patch
