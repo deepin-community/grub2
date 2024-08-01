@@ -1,3 +1,9 @@
+grub2 (2.12-1deepin9) unstable; urgency=medium
+
+  * set GRUB_DEVICE by env when root is overlayfs
+
+ -- xiamengliang <xiamengliang@uniontech.com>  Thu, 01 Aug 2024 16:36:49 +0800
+
 grub2 (2.12-1deepin8) unstable; urgency=medium
 
   * (loong64) Introduce a patch for old-world firmware compatibility.
