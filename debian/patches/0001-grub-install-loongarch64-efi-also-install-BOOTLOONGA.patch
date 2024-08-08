@@ -1,0 +1,83 @@
+From ce9bc1a3687bba025d2a236cf1f2132d0c760b06 Mon Sep 17 00:00:00 2001
+From: Mingcong Bai <jeffbai@aosc.io>
+Date: Fri, 9 Aug 2024 17:31:35 +0800
+Subject: [PATCH] grub-install: (loongarch64-efi) also install
+ BOOTLOONGARCH.EFI
+
+Some old-world firmware (especially that of the BPI01000 revision) does not
+recognise the standardised BOOTLOONGARCH64.EFI and only sees BOOTLOONGARCH.EFI
+as the removable image name. Make a copy (since it is FAT/VFAT) to satisfy
+both old- and new-world firmware.
+---
+ util/grub-install.c | 19 ++++++++++++++++++-
+ 1 file changed, 18 insertions(+), 1 deletion(-)
+
+diff --git a/util/grub-install.c b/util/grub-install.c
+index dfcd269..81fdfb4 100644
+--- a/util/grub-install.c
++++ b/util/grub-install.c
+@@ -958,6 +958,8 @@ main (int argc, char *argv[])
+   int is_efi = 0;
+   const char *efi_distributor = NULL;
+   const char *efi_suffix = NULL, *efi_suffix_upper = NULL;
++  // For LoongArch old-world firmware compatibility.
++  const char *efi_suffix_ow = NULL, *efi_suffix_upper_ow = NULL;
+   char *efi_file = NULL;
+   char **grub_devices;
+   grub_fs_t grub_fs;
+@@ -1285,6 +1287,8 @@ main (int argc, char *argv[])
+ 	case GRUB_INSTALL_PLATFORM_LOONGARCH64_EFI:
+ 	  efi_suffix = "loongarch64";
+ 	  efi_suffix_upper = "LOONGARCH64";
++	  efi_suffix_ow = "loongarch";
++	  efi_suffix_upper_ow = "LOONGARCH";
+ 	  break;
+ 	case GRUB_INSTALL_PLATFORM_RISCV32_EFI:
+ 	  efi_suffix = "riscv32";
+@@ -2145,6 +2149,7 @@ main (int argc, char *argv[])
+       {
+ 	char *dst = grub_util_path_concat (2, efidir, efi_file);
+ 	char *removable_file = xasprintf ("BOOT%s.EFI", efi_suffix_upper);
++	char *removable_file_ow = xasprintf ("BOOT%s.EFI", efi_suffix_upper_ow);
+ 
+ 	if (uefi_secure_boot)
+ 	  {
+@@ -2222,6 +2227,10 @@ main (int argc, char *argv[])
+ 		    grub_util_info ("Secure boot: installing shim and image into rm path");
+ 		    also_install_removable (shim_signed, base_efidir, removable_file, 1);
+ 
++		    if (platform == GRUB_INSTALL_PLATFORM_LOONGARCH64_EFI) {
++		      also_install_removable (shim_signed, base_efidir, removable_file_ow, 1);
++		    }
++
+ 		    also_install_removable (efi_signed, base_efidir, chained_base, 1);
+ 		    also_install_removable (mok_src, base_efidir, mok_file, 0);
+ 
+@@ -2251,6 +2260,10 @@ main (int argc, char *argv[])
+ 		  {
+ 		    grub_util_info ("Secure boot (no shim): installing signed grub binary into rm path");
+ 		    also_install_removable (efi_signed, base_efidir, removable_file, 1);
++
++		if (platform == GRUB_INSTALL_PLATFORM_LOONGARCH64_EFI) {
++		    also_install_removable (efi_signed, base_efidir, removable_file_ow, 1);
++		}
+ 		  }
+ 	      }
+ 
+@@ -2274,8 +2287,12 @@ main (int argc, char *argv[])
+ 	    /* No secure boot - just install our newly-generated image */
+ 	    grub_util_info ("No Secure Boot: installing core image");
+ 	    grub_install_copy_file (imgfile, dst, 1);
+-	    if (force_extra_removable)
++	    if (force_extra_removable) {
+ 	      also_install_removable (imgfile, base_efidir, removable_file, 1);
++	      if (platform == GRUB_INSTALL_PLATFORM_LOONGARCH64_EFI) {
++	        also_install_removable (imgfile, base_efidir, removable_file_ow, 1);
++	      }
++      }
+ 	  }
+ 
+ 	grub_set_install_backup_ponr ();
+-- 
+2.46.0
+
