@@ -102,3 +102,6 @@ deepin-Also-install-x86_64-efi-to-grub-efi.patch
 #
 # https://lists.gnu.org/archive/html/grub-devel/2024-06/msg00101.html
 deepin/0001-util-grub-mkrescue-use-capitalised-paths-for-removab.patch
+# loong64 old-world firmware compatibility
+0001-loongarch64-able-to-start-on-legacy-firmware.patch
+0001-grub-install-loongarch64-efi-also-install-BOOTLOONGA.patch

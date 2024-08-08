@@ -1,3 +1,9 @@
+grub2 (2.12-1deepin8) unstable; urgency=medium
+
+  * (loong64) Introduce a patch for old-world firmware compatibility.
+
+ -- Mingcong Bai <baimingcong@uniontech.com>  Thu, 08 Aug 2024 11:34:13 +0800
+
 grub2 (2.12-1deepin7) unstable; urgency=medium
 
   * grub-mkrescue: use upper-case paths for EFI images.
