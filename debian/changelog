@@ -1,3 +1,9 @@
+grub2 (2.12-1deepin11) unstable; urgency=medium
+
+  * fix boot_counter error
+
+ -- ssk-wh <fanpengcheng@uniontech.com>  Wed, 21 Aug 2024 16:16:36 +0800
+
 grub2 (2.12-1deepin10) unstable; urgency=medium
 
   * reimplement boot_counter
