@@ -1,3 +1,9 @@
+grub2 (2.12-1deepin12) unstable; urgency=medium
+
+  * add uniontech0035-block-terminal-output.patch 
+
+ -- deepin <liujianqiang@uniontech.com>  Wed, 04 Sep 2024 17:25:54 +0800
+
 grub2 (2.12-1deepin11) unstable; urgency=medium
 
   * fix boot_counter error
