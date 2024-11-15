@@ -111,3 +111,6 @@ uniontech0035-block-terminal-output.patch
 
 deepin/0002-hygon-newfeature-tpcm-add-tpcm-support.patch
 deepin/0003-hygon-newfeature-tpcm-embed-tpcm-module-into-kernel.img-by.patch
+
+deepin/0004-cryptodisk-add-OS-provided-secret-support.patch
+deepin/0005-efi-Add-API-for-retrieving-the-EFI-secret-for-crypto.patch
