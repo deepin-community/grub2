@@ -1,3 +1,9 @@
+grub2 (2.12-1deepin14) unstable; urgency=medium
+
+  * Support use confidential computing provisioned secrets for disk decryption
+
+ -- hanliyang <hanliyang@hygon.cn>  Fri, 15 Nov 2024 10:30:11 +0800
+
 grub2 (2.12-1deepin13) unstable; urgency=medium
 
   * Support hygon tpcm
