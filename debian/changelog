@@ -1,3 +1,11 @@
+grub2 (2.12-1deepin15) unstable; urgency=medium
+
+  * Add MIPS Loongson "LEFI" support.
+  * AOSC-Tracking/grub @ aosc/grub-2.12, ported to Debian sources.
+  * Introduce grub-efi-mips64el* for MIPS Loongson "LEFI" systems.
+
+ -- Mingcong Bai <baimingcong@uniontech.com>  Tue, 14 Jan 2025 14:04:00 +0800
+
 grub2 (2.12-1deepin14) unstable; urgency=medium
 
   * Support use confidential computing provisioned secrets for disk decryption
