@@ -1,3 +1,17 @@
+grub2 (2.12-1deepin17) unstable; urgency=medium
+
+  * Add MIPS Loongson "LEFI" support.
+  * AOSC-Tracking/grub @ aosc/grub-2.12, ported to Debian sources.
+  * Introduce grub-efi-mips64el* for MIPS Loongson "LEFI" systems.
+
+ -- Mingcong Bai <baimingcong@uniontech.com>  Tue, 14 Jan 2025 14:04:00 +0800
+
+grub2 (2.12-1deepin16) unstable; urgency=medium
+
+  * fix compile error.
+
+ -- xinpeng.wang <wangxinpeng@uniontech.com>  Fri, 21 Feb 2025 14:28:48 +0800
+
 grub2 (2.12-1deepin15) unstable; urgency=medium
 
   * Adapting to immutable systems.
