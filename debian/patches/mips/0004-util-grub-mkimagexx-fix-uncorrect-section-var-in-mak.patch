@@ -1,7 +1,7 @@
 From 17dd41d775bb7ffa8c2c9d86ea7904df5a7fde45 Mon Sep 17 00:00:00 2001
 From: "Lain \"Fearyncess\" Yang" <fsf@live.com>
 Date: Mon, 28 Aug 2023 11:33:13 +0800
-Subject: [PATCH 04/13] util/grub-mkimagexx: fix uncorrect section var in
+Subject: [PATCH 04/15] util/grub-mkimagexx: fix uncorrect section var in
  `make_reloc_section`
 
 ---

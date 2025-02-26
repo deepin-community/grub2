@@ -1,7 +1,7 @@
 From 999ea95005e77c344cb330a80b536d7207e3d1a4 Mon Sep 17 00:00:00 2001
 From: "Lain \"Fearyncess\" Yang" <fsf@live.com>
 Date: Mon, 28 Aug 2023 11:59:42 +0800
-Subject: [PATCH 03/13] loader/mips64/linux: fix missing type args while
+Subject: [PATCH 03/15] loader/mips64/linux: fix missing type args while
  loading kernel
 
 ---
