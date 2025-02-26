@@ -1,7 +1,7 @@
 From 1b4326012610e7668ed5a6ac312e4c568c1b9e01 Mon Sep 17 00:00:00 2001
 From: Heiher <r@hev.cc>
 Date: Mon, 9 Jan 2017 14:42:41 +0800
-Subject: [PATCH 01/13] mips64: Add support for 64-bit MIPS.
+Subject: [PATCH 01/15] mips64: Add support for 64-bit MIPS.
 
 ---
  configure.ac                         |  21 +-

@@ -1,7 +1,7 @@
 From 46f9c0304fa0d699ec9a8c8677dd7821ee93e043 Mon Sep 17 00:00:00 2001
 From: Henry Chen <chenx97@aosc.io>
 Date: Mon, 7 Oct 2024 15:32:14 +0800
-Subject: [PATCH 11/13] loader/mips64: fix warnings and style
+Subject: [PATCH 11/15] loader/mips64: fix warnings and style
 
 ---
  grub-core/loader/mips64/linux.c | 82 ++++++++++++++++++---------------

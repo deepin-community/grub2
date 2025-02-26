@@ -1,7 +1,7 @@
 From 47cf2b526f856b821fd2e2dc988881c7bd71f045 Mon Sep 17 00:00:00 2001
 From: Heiher <r@hev.cc>
 Date: Fri, 13 Jan 2017 16:02:41 +0800
-Subject: [PATCH 02/13] mips64: Add support for Loongson.
+Subject: [PATCH 02/15] mips64: Add support for Loongson.
 
 ---
  configure.ac                            |   6 +-

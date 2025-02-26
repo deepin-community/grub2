@@ -119,6 +119,7 @@ deepin/0005-efi-Add-API-for-retrieving-the-EFI-secret-for-crypto.patch
 mips/0001-mips64-Add-support-for-64-bit-MIPS.patch
 mips/0002-mips64-Add-support-for-Loongson.patch
 mips/0003-loader-mips64-linux-fix-missing-type-args-while-load.patch
+mips/0004-util-grub-mkimagexx-fix-uncorrect-section-var-in-mak.patch
 mips/0005-loader-mips64-linux-drop-argv-args-when-calling-grub.patch
 mips/0006-lib-mips64-drop-all-efi_call-wrappers.patch
 mips/0007-lib-mips64-use-a-common-GUID-impl-in-GRUB.patch
@@ -128,3 +129,5 @@ mips/0010-lib-mips64-silence-werror.patch
 mips/0011-loader-mips64-fix-warnings-and-style.patch
 mips/0012-kern-efi-mm-mips64-allocate-more-memory-at-initializ.patch
 mips/0013-fix-include-add-a-small-header-to-dummy-boot.h-and-t.patch
+mips/0014-loader-mips64-linux-properly-prepare-memory-for-init.patch
+mips/0015-fix-util-grub-mkimagexx-unconditionaly-use-64-bit-ad.patch

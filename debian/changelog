@@ -1,5 +1,12 @@
 grub2 (2.12-1deepin17) unstable; urgency=medium
 
+  * Introduce more patches from AOSC-Tracking/grub to fix boot memory
+    allocation and 32-bit build.
+
+ -- Mingcong Bai <baimingcong@uniontech.com>  Tue, 27 Feb 2025 12:00:00 +0800
+
+grub2 (2.12-1deepin16) unstable; urgency=medium
+
   * Add MIPS Loongson "LEFI" support.
   * AOSC-Tracking/grub @ aosc/grub-2.12, ported to Debian sources.
   * Introduce grub-efi-mips64el* for MIPS Loongson "LEFI" systems.
