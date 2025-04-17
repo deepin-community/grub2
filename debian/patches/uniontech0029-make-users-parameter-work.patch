@@ -1,0 +1,45 @@
+From 980c0feafd0060b4fa629b1bdaa9b3e1693f9c97 Mon Sep 17 00:00:00 2001
+From: zhouzilong <zhouzilong@uniontech.com>
+Date: Wed, 22 Sep 2021 10:29:43 +0800
+Subject: [PATCH] make users parameter work
+Change-Id: I2a97bdb1e131318367a2bf3ca393f5c44e30ade2
+---
+ grub-core/normal/auth.c |  2 +-
+ grub-core/normal/menu.c | 10 ++++++++++
+ 2 files changed, 11 insertions(+), 1 deletion(-)
+--- a/grub-core/normal/auth.c
++++ b/grub-core/normal/auth.c
+@@ -141,7 +141,7 @@
+ 	continue;
+ 
+       if ((userlist && grub_strword (userlist, user->name))
+-	  || (!userlist))
++	  || (grub_strlen(userlist) == 0))
+ 	return 1;
+     }
+ 
+--- a/grub-core/normal/menu.c
++++ b/grub-core/normal/menu.c
+@@ -204,12 +204,22 @@
+ static void
+ grub_menu_execute_entry(grub_menu_entry_t entry, int auto_boot)
+ {
++  grub_err_t err = GRUB_ERR_NONE;
+   int errs_before;
+   grub_menu_t menu = NULL;
+   char *optr, *buf, *oldchosen = NULL, *olddefault = NULL;
+   const char *ptr, *chosen, *def;
+   grub_size_t sz = 0;
+ 
++  if (grub_strlen(entry->users))
++    err = grub_auth_check_authentication (entry->users);
++    
++  if (err)
++    {
++      grub_print_error ();
++      grub_errno = GRUB_ERR_NONE;
++      return;
++    }
+ 
+   errs_before = grub_err_printed_errors;
+ 

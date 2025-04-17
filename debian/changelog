@@ -1,3 +1,52 @@
+grub2 (2.12-7deepin1) unstable; urgency=medium
+
+  * Apply patches from deepin grub2 2.06.
+
+  * remove loongarch64 patch.
+
+  * Do not use fwsetup --is-supported.
+    Ref: https://github.com/linuxdeepin/developer-center/issues/7523
+
+  * Disable verification of font files.
+    Revert https://lists.gnu.org/archive/html/grub-devel/2022-11/msg00067.html.
+
+  * x64: Also install signed efi to grub.efi.
+
+  * grub-mkrescue: use upper-case paths for EFI images.
+    * This is needed to generate bootable ISOs on Loongson firmware.
+    * /efi/boot/bootloongarch64.efi => /EFI/BOOT/BOOTLOONGARCH64.EFI.
+    * This shouldn't cause problems with other architectures, AFAIK.
+  * See: https://lists.gnu.org/archive/html/grub-devel/2024-06/msg00101.html
+
+  * (loong64) Introduce a patch for old-world firmware compatibility.
+
+  * set GRUB_DEVICE by env when root is overlayfs.
+
+  * reimplement boot_counter.
+
+  * fix boot_counter error.
+
+  * add uniontech0035-block-terminal-output.patch.
+
+  * Support hygon tpcm.
+
+  * Support use confidential computing provisioned secrets for disk decryption.
+
+  * Adapting to immutable systems.
+
+  * fix compile error.
+
+  * Add MIPS Loongson "LEFI" support.
+  * AOSC-Tracking/grub @ aosc/grub-2.12, ported to Debian sources.
+  * Introduce grub-efi-mips64el* for MIPS Loongson "LEFI" systems.
+
+  * Introduce more patches from AOSC-Tracking/grub to fix boot memory
+    allocation and 32-bit build.
+
+  * add translate for shell.
+
+ -- lhdjply <lhdjply@126.com>  Thu, 17 Apr 2025 16:05:24 +0800
+
 grub2 (2.12-7) unstable; urgency=medium
 
   [ Mate Kukri ]

@@ -1,0 +1,29 @@
+From e5647047d833c7bbf072ffbe90af63ce342adb81 Mon Sep 17 00:00:00 2001
+From: ut000745 <ut000745@ut000745-PC>
+Date: Wed, 2 Mar 2022 19:14:33 +0800
+Subject: [PATCH] fix: arm64 terminal output to console
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+   fix terminal_output console
+
+---
+ util/grub.d/00_header.in | 3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
+
+--- a/util/grub.d/00_header.in
++++ b/util/grub.d/00_header.in
+@@ -282,10 +282,11 @@
+     # Just use the native terminal
+   ;;
+   x*)
+-if [ $ARCH_NAME != "loongson" ];then
++if [ "$machine" != "aarch64" ];then
+     cat << EOF
+ terminal_output ${GRUB_TERMINAL_OUTPUT}
+ EOF
++
+ fi
+   ;;
+ esac

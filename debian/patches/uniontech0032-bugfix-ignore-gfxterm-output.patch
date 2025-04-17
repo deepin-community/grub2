@@ -1,0 +1,23 @@
+Description: fix arm64 terminal output console
+Author: Angie.J <doucaixia@uniontech.com>
+Last-Update: 2022-03-29
+
+---
+
+--- a/util/grub.d/00_header.in
++++ b/util/grub.d/00_header.in
+@@ -282,12 +282,14 @@
+     # Just use the native terminal
+   ;;
+   x*)
++if [ "$machine" != "loongarch64" ]; then
+ if [ $ARCH_NAME != "loongson" ] && [ "$machine" != "aarch64" ];then
+     cat << EOF
+ terminal_output ${GRUB_TERMINAL_OUTPUT}
+ EOF
+ 
+ fi
++fi
+   ;;
+ esac
+ 

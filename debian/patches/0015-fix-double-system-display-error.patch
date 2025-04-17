@@ -1,0 +1,10 @@
+--- a/util/grub.d/30_os-prober.in
++++ b/util/grub.d/30_os-prober.in
+@@ -133,6 +133,7 @@
+ fi
+ 
+ for OS in ${OSPROBED} ; do
++  OS="`echo ${OS} | sed -e 's/(20)//g'`"
+   DEVICE="`echo ${OS} | cut -d ':' -f 1`"
+   LONGNAME="`echo ${OS} | cut -d ':' -f 2 | tr '^' ' '`"
+   LABEL="`echo ${OS} | cut -d ':' -f 3 | tr '^' ' '`"

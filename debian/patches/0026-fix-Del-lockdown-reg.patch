@@ -1,0 +1,39 @@
+Description: <remove lockdown register>
+ 
+ TODO: remov lockdown register.
+ .
+ grub2 (2.04-17) unstable; urgency=medium
+ ..
+Author: wangyouwan <wangyouwan@uniontech.com>
+Bug-Debian: https://bugs.debian.org/984488
+Bug-Debian: https://bugs.debian.org/985374
+
+---
+The information above should follow the Patch Tagging Guidelines, please
+checkout http://dep.debian.net/deps/dep3/ to learn about the format. Here
+are templates for supplementary fields that you might want to add:
+
+Origin: <vendor|upstream|other>, <url of original patch>
+Bug: <url in upstream bugtracker>
+Bug-Debian: https://bugs.debian.org/<bugnumber>
+Bug-Ubuntu: https://launchpad.net/bugs/<bugnumber>
+Forwarded: <no|not-needed|url proving that it has been forwarded>
+Reviewed-By: <name and email of someone who approved the patch>
+Last-Update: 2021-06-11
+
+--- a/grub-core/kern/lockdown.c
++++ b/grub-core/kern/lockdown.c
+@@ -71,11 +71,12 @@
+ grub_lockdown (void)
+ {
+   lockdown = GRUB_LOCKDOWN_ENABLED;
+-
++#if 0
+   grub_verifier_register (&lockdown_verifier);
+ 
+   grub_env_set ("lockdown", "y");
+   grub_env_export ("lockdown");
++#endif  
+ }
+ 
+ int

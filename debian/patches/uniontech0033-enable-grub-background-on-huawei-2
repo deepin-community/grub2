@@ -1,0 +1,39 @@
+--- grub2-2.12.orig/util/grub.d/00_header.in
++++ grub2-2.12/util/grub.d/00_header.in
+@@ -17,6 +17,13 @@ set -e
+ # You should have received a copy of the GNU General Public License
+ # along with GRUB.  If not, see <http://www.gnu.org/licenses/>.
+ 
++PC_TYPE=$(dmidecode -s system-product-name|awk '{print $NF}')
++case "$PC_TYPE" in
++        KLVV*|KLVU*|PGUV*|PGUW*)
++        background_support=true
++        ;;
++esac
++
+ prefix="@prefix@"
+ exec_prefix="@exec_prefix@"
+ datarootdir="@datarootdir@"
+@@ -154,7 +161,7 @@ EOF
+ else
+ # If all_video.mod isn't available load all modules available
+ # with versions prior to introduction of all_video.mod
+-if [ "$machine" = "aarch64" ];then
++if [ "$machine" = "aarch64" ] && [ "x$background_support" = "x" ];then
+ cat <<EOF
+     echo
+ EOF
+@@ -288,6 +295,13 @@ terminal_output ${GRUB_TERMINAL_OUTPUT}
+ EOF
+ 
+ fi
++
++if [ "x$background_support" = x"true" ];then
++    cat << EOF
++terminal_output ${GRUB_TERMINAL_OUTPUT}
++EOF
++fi
++
+   ;;
+ esac
+ 

@@ -1,0 +1,27 @@
+From eae555e0088241cd515579c37634d1f7d0f1d5ee Mon Sep 17 00:00:00 2001
+From: Mingcong Bai <jeffbai@aosc.io>
+Date: Thu, 16 Jan 2025 16:04:25 +0800
+Subject: [PATCH 13/15] fix(include): add a small header to dummy boot.h and
+ time.h
+
+Prevent purging by quilt.
+---
+ include/grub/mips64/efi/boot.h | 1 +
+ include/grub/mips64/efi/time.h | 1 +
+ 2 files changed, 2 insertions(+)
+
+diff --git a/include/grub/mips64/efi/boot.h b/include/grub/mips64/efi/boot.h
+index e69de29bb..32ccec1ff 100644
+--- a/include/grub/mips64/efi/boot.h
++++ b/include/grub/mips64/efi/boot.h
+@@ -0,0 +1 @@
++/* Empty boot.h */
+diff --git a/include/grub/mips64/efi/time.h b/include/grub/mips64/efi/time.h
+index e69de29bb..86f7911a4 100644
+--- a/include/grub/mips64/efi/time.h
++++ b/include/grub/mips64/efi/time.h
+@@ -0,0 +1 @@
++/* Empty time.h */
+-- 
+2.48.1
+
