@@ -1,0 +1,11 @@
+--- a/util/grub.d/00_header.in
++++ b/util/grub.d/00_header.in
+@@ -222,7 +222,7 @@
+     cat << EOF
+     font="`make_system_path_relative_to_its_root "${font_path}"`"
+ fi
+-
++set gfxmode=auto
+ if loadfont \$font ; then
+ EOF
+ 	    else

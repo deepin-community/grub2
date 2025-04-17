@@ -1,0 +1,24 @@
+Description: Also install signed efi to grub.efi
+Author: Tianyu Chen <sweetyfish@deepin.org>
+Origin: vendor
+# Bug-Deepin: <URL to the vendor bug report if any, optional>
+Forwarded: not-needed
+Last-Update: 2024-03-29
+---
+This patch header follows DEP-3: http://dep.debian.net/deps/dep3/
+--- a/util/grub-install.c
++++ b/util/grub-install.c
+@@ -2181,6 +2181,13 @@
+ 		chained_dst = grub_util_path_concat (2, efidir, chained_base);
+ 		grub_install_copy_file (efi_signed, chained_dst, 1);
+ 
++		// Also install to grub.efi
++		if (strcmp (efi_suffix, "x64") == 0) {
++			char *chained_dst_grub_efi = grub_util_path_concat (2, efidir, "grub.efi");
++			grub_install_copy_file (efi_signed, chained_dst_grub_efi, 1);
++			free(chained_dst_grub_efi);
++		}
++
+ 		/* Not critical, so not an error if they are not present (as it
+ 		   won't be for older releases); but if we have them, make
+ 		   sure they are installed.  */

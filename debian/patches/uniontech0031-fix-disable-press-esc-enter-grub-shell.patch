@@ -1,0 +1,49 @@
+--- a/grub-core/normal/main.c
++++ b/grub-core/normal/main.c
+@@ -39,6 +39,8 @@
+ 
+ #define GRUB_DEFAULT_HISTORY_SIZE	50
+ 
++int esc_flag;
++
+ static int nested_level = 0;
+ int grub_normal_exit_level = 0;
+ 
+@@ -263,6 +265,8 @@
+   grub_menu_t menu = 0;
+   const char *prefix;
+ 
++reshow_menu:
++  esc_flag = 0;
+   if (! nested)
+     {
+       prefix = grub_env_get ("prefix");
+@@ -293,6 +297,9 @@
+ 	    grub_normal_free_menu (menu);
+ 	}
+     }
++
++  if(esc_flag)
++    goto reshow_menu;
+ }
+ 
+ /* This starts the normal mode.  */
+--- a/grub-core/normal/menu.c
++++ b/grub-core/normal/menu.c
+@@ -37,6 +37,8 @@
+    entry failing to boot.  */
+ #define DEFAULT_ENTRY_ERROR_DELAY_MS  2500
+ 
++extern int esc_flag;
++
+ grub_err_t (*grub_gfxmenu_try_hook) (int entry, grub_menu_t menu,
+ 				     int nested) = NULL;
+ 
+@@ -791,6 +793,7 @@
+ 	      return current_entry;
+ 
+ 	    case GRUB_TERM_ESC:
++          esc_flag = 1;
+ 	      if (nested)
+ 		{
+ 		  menu_fini ();

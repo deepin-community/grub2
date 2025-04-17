@@ -1,0 +1,42 @@
+--- a/util/grub.d/00_header.in
++++ b/util/grub.d/00_header.in
+@@ -219,15 +219,7 @@
+ 	done
+ 	if [ -n "${font_path}" ] ; then
+     cat << EOF
+-if [ x\$feature_default_font_path = xy ] ; then
+-   font=unicode
+-else
+-EOF
+-                # Make the font accessible
+-		prepare_grub_to_access_device `${grub_probe} --target=device "${font_path}"`
+-    cat << EOF
+-    font="`make_system_path_relative_to_its_root "${font_path}"`"
+-fi
++font=unicode
+ set gfxmode=auto
+ if loadfont \$font ; then
+ EOF
+@@ -256,6 +248,22 @@
+ cat <<EOF
+ fi
+ EOF
++
++if [ -z "$GRUB_FONT" ] ; then
++if [ -n "${font_path}" ] ; then
++    cat << EOF
++if [ x\$feature_default_font_path = xy ] ; then
++   font=unicode
++else
++EOF
++                # Make the font accessible
++		prepare_grub_to_access_device `${grub_probe} --target=device "${font_path}"`
++    cat << EOF
++    font="`make_system_path_relative_to_its_root "${font_path}"`"
++fi
++EOF
++fi
++fi
+ fi
+ 
+ case x${GRUB_TERMINAL_INPUT} in

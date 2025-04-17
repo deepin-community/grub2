@@ -144,3 +144,62 @@ cve-2025-jan/fs-ext2-Rework-out-of-bounds-read-for-inline-and-external.patch
 cve-2025-jan/fs-xfs-Fix-grub_xfs_iterate_dir-return-value-in-case-of-f.patch
 cve-2025-jan/fs-xfs-Propagate-incorrect-inode-error-from-grub_xfs_read.patch
 cve-2025-jan/fs-xfs-Handle-root-inode-read-failure-in-grub_xfs_mount.patch
+0001_grub2_2.02_beta3-4_deepin-gfxmode-mod.patch
+0003-fix_grub_efidisk_open_logic.patch
+0006-fix-loongson-laptop-blurry-screen.patch
+0007-fix-arch-arm64-grub-menu-not-shown-bug.patch
+0010-remove-insmod-videos-for-arm64.patch
+0015-fix-double-system-display-error.patch
+0016-loongson_xfs_install_grub_add_fonts.patch
+0018-add-custom-keywords-translation.patch
+0019-fix-grub.patch
+0025-fix-when-installing-the-package-execute-update-grub.patch
+0026-fix-Del-lockdown-reg.patch
+0027-fix-can-not-boot-bug.patch
+0029-fix-arm64-terminal-output-to-console.patch
+uniontech0028-forbid-menu-edit.patch
+uniontech0029-make-users-parameter-work.patch
+uniontech0029-make-users-parameter-work-2.patch
+#uniontech0032-bugfix-ignore-gfxterm-output.patch
+#uniontech0033-enable-grub-background-on-huawei.patch
+uniontech0034-enable-os-prober.patch
+fix-remove-system-setup-on-huawei-pc.patch
+uniontech0033-enable-grub-background-on-huawei-2
+revert-fwsetup-is-supported.patch
+# Revert "kern/efi/sb: Enforce verification of font files"
+kern-efi-sb-Enforce-verification-of-font-files.patch
+deepin-Also-install-x86_64-efi-to-grub-efi.patch
+# EFI path fix, useful for buggy firmware (such as Loongson) that do not treat
+# FAT ESPs as case-insensitive. Currently pre-upstream:
+#
+# https://lists.gnu.org/archive/html/grub-devel/2024-06/msg00101.html
+deepin/0001-util-grub-mkrescue-use-capitalised-paths-for-removab.patch
+# loong64 old-world firmware compatibility
+0001-loongarch64-able-to-start-on-legacy-firmware.patch
+0001-grub-install-loongarch64-efi-also-install-BOOTLOONGA.patch
+deepin/0002-probe-grub-device-for-overlay-as-root.patch
+reimplement_boot_counter.patch
+uniontech0035-block-terminal-output.patch
+
+deepin/0002-hygon-newfeature-tpcm-add-tpcm-support.patch
+deepin/0003-hygon-newfeature-tpcm-embed-tpcm-module-into-kernel.img-by.patch
+
+deepin/0004-cryptodisk-add-OS-provided-secret-support.patch
+deepin/0005-efi-Add-API-for-retrieving-the-EFI-secret-for-crypto.patch
+
+# MIPS "LEFI" support
+mips/0001-mips64-Add-support-for-64-bit-MIPS.patch
+mips/0002-mips64-Add-support-for-Loongson.patch
+mips/0003-loader-mips64-linux-fix-missing-type-args-while-load.patch
+mips/0004-util-grub-mkimagexx-fix-uncorrect-section-var-in-mak.patch
+mips/0005-loader-mips64-linux-drop-argv-args-when-calling-grub.patch
+mips/0006-lib-mips64-drop-all-efi_call-wrappers.patch
+mips/0007-lib-mips64-use-a-common-GUID-impl-in-GRUB.patch
+mips/0008-kern-mips64-fix-error-catch-output-type-mismatch.patch
+mips/0009-kern-mips64-fix-missing-grub_install_get_time_ms-pro.patch
+mips/0010-lib-mips64-silence-werror.patch
+mips/0011-loader-mips64-fix-warnings-and-style.patch
+mips/0012-kern-efi-mm-mips64-allocate-more-memory-at-initializ.patch
+mips/0013-fix-include-add-a-small-header-to-dummy-boot.h-and-t.patch
+mips/0014-loader-mips64-linux-properly-prepare-memory-for-init.patch
+mips/0015-fix-util-grub-mkimagexx-unconditionaly-use-64-bit-ad.patch

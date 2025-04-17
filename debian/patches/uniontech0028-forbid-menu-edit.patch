@@ -1,0 +1,105 @@
+
+From: zhouzilong <zhouzilong@uniontech.com>
+Date: Mon, 30 Aug 2021 14:08:29 
+Subject: restricted mode disables menu edit.
+Simplify the original grub menu encryption logic. We don’t need
+to do verification when pressing enter and ESC key.
+In the restricted mode, the user can only boot the boot item,
+and is not allowed to edit the menu and enter the shell unless
+the account password is given.
+Modify point:
+   * is_authenticated(): cancel the use of superusers variable. don't need it.
+   * grub_auth_check_authentication(): determine whether "users" is empty.
+     if so, do not check.
+   * grub_menu_execute_entry(): do not check when entering.
+   * grub_show_menu(): do not check when pressing the ESC key.
+---
+--- a/grub-core/normal/auth.c
++++ b/grub-core/normal/auth.c
+@@ -133,21 +133,15 @@
+ static int
+ is_authenticated (const char *userlist)
+ {
+-  const char *superusers;
+   struct grub_auth_user *user;
+ 
+-  superusers = grub_env_get ("superusers");
+-
+-  if (!superusers)
+-    return 1;
+-
+   FOR_LIST_ELEMENTS (user, users)
+     {
+       if (!(user->authenticated))
+ 	continue;
+ 
+       if ((userlist && grub_strword (userlist, user->name))
+-	  || grub_strword (superusers, user->name))
++	  || (!userlist))
+ 	return 1;
+     }
+ 
+@@ -211,7 +205,11 @@
+ 
+   grub_memset (login, 0, sizeof (login));
+ 
+-  if (is_authenticated (userlist))
++  /* 
++   * First determine if it is restricted mode(users isn't empty), 
++   * and if so, further determine if the user has been verified.  
++   */
++  if ((users == NULL) || is_authenticated (userlist))
+     {
+       punishment_delay = 1;
+       return GRUB_ERR_NONE;
+--- a/grub-core/normal/menu.c
++++ b/grub-core/normal/menu.c
+@@ -204,22 +204,12 @@
+ static void
+ grub_menu_execute_entry(grub_menu_entry_t entry, int auto_boot)
+ {
+-  grub_err_t err = GRUB_ERR_NONE;
+   int errs_before;
+   grub_menu_t menu = NULL;
+   char *optr, *buf, *oldchosen = NULL, *olddefault = NULL;
+   const char *ptr, *chosen, *def;
+   grub_size_t sz = 0;
+ 
+-  if (entry->restricted)
+-    err = grub_auth_check_authentication (entry->users);
+-
+-  if (err)
+-    {
+-      grub_print_error ();
+-      grub_errno = GRUB_ERR_NONE;
+-      return;
+-    }
+ 
+   errs_before = grub_err_printed_errors;
+ 
+@@ -933,7 +923,7 @@
+ grub_err_t
+ grub_show_menu (grub_menu_t menu, int nested, int autoboot)
+ {
+-  grub_err_t err1, err2;
++  grub_err_t err1;
+ 
+   while (1)
+     {
+@@ -943,15 +933,7 @@
+ 
+       if (grub_normal_exit_level)
+ 	break;
+-
+-      err2 = grub_auth_check_authentication (NULL);
+-      if (err2)
+-	{
+-	  grub_print_error ();
+-	  grub_errno = GRUB_ERR_NONE;
+-	  continue;
+-	}
+-
++    
+       break;
+     }
+ 

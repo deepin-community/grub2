@@ -1,0 +1,29 @@
+--- a/util/grub.d/30_uefi-firmware.in
++++ b/util/grub.d/30_uefi-firmware.in
+@@ -17,6 +17,13 @@
+ # You should have received a copy of the GNU General Public License
+ # along with GRUB.  If not, see <http://www.gnu.org/licenses/>.
+ 
++PC_TYPE=$(dmidecode -s system-product-name|awk '{print $NF}')
++case "$PC_TYPE" in
++        KLVV*|KLVU*|PGUV*|PGUW*)
++        hw_support=true
++        ;;
++esac
++
+ prefix="@prefix@"
+ exec_prefix="@exec_prefix@"
+ datarootdir="@datarootdir@"
+@@ -33,6 +40,7 @@
+ gettext_printf "System Setup" >/dev/null 2>&1
+ gettext_printf "UnionTech OS Restore" >/dev/null 2>&1
+ 
++if [ "x$hw_support" != x"true" ];then
+ cat << EOF
+ if [ "\$grub_platform" = "efi" ]; then
+ 	fwsetup --is-supported
+@@ -43,3 +51,4 @@
+ 	fi
+ fi
+ EOF
++fi
