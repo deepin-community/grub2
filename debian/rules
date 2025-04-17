@@ -190,9 +190,11 @@ override_dh_autoreconf:
 	set -e; for extra in 915resolution ntldr-img; do \
 		cp -a debian/grub-extras/$$extra debian/grub-extras-enabled/; \
 	done
+	cp po/Makefile.in.in po/Mafile.ininbak
 	env -u DH_OPTIONS GRUB_CONTRIB=$(CURDIR)/debian/grub-extras-enabled \
 		PYTHON=python3 \
 		dh_autoreconf -- ./autogen.sh
+	mv po/Mafile.ininbak po/Makefile.in.in
 	cp /usr/share/lzo/minilzo/*.c /usr/share/lzo/minilzo/*.h grub-core/lib/minilzo/
 
 debian/stamps/configure-grub-common: debian/stamps/configure-grub-$(COMMON_PLATFORM)

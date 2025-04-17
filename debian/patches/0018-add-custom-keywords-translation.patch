@@ -30,8 +30,8 @@ Change-Id: Id3ed8f3f2c423c94f14e8a9d24310f3e7d80e7b1
 +#~ msgstr "系统还原"
 +
 +#: util/grub.d/30_uefi-firmware.in:42
-+#~ msgid "System Setup"
-+#~ msgstr "系统设置"
++msgid "System Setup"
++msgstr "系统设置"
 +
  #: util/grub.d/10_illumos.in:40
  #, c-format
