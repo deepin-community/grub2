@@ -1,125 +1,152 @@
-grub2 (2.12-1deepin18) unstable; urgency=medium
+grub2 (2.12-7) unstable; urgency=medium
 
-  * add translate for shell.
+  [ Mate Kukri ]
+  * Drop NTFS patches that seem to be causing regressions
+    (Closes: #1100486, #1100470)
 
- -- xinpeng.wang <wangxinpeng@uniontech.com>  Thu, 17 Apr 2025 19:03:04 +0800
+ -- Felix Zielcke <fzielcke@z-51.de>  Sat, 15 Mar 2025 14:55:29 +0100
 
-grub2 (2.12-1deepin17) unstable; urgency=medium
+grub2 (2.12-6) unstable; urgency=medium
 
-  * Introduce more patches from AOSC-Tracking/grub to fix boot memory
-    allocation and 32-bit build.
+  [ Mate Kukri ]
+  * Fix out of bounds XSDT access, re-enable ACPI SPCR table support
 
- -- Mingcong Bai <baimingcong@uniontech.com>  Tue, 27 Feb 2025 12:00:00 +0800
+  [ Miroslav Kure ]
+  * Updated Czech translation of grub debconf messages. (Closes: #1035052)
 
-grub2 (2.12-1deepin16) unstable; urgency=medium
+  [ Viktar Siarheichyk ]
+  * Updated Belarusian translation. (Closes: #1034905)
 
-  * Add MIPS Loongson "LEFI" support.
-  * AOSC-Tracking/grub @ aosc/grub-2.12, ported to Debian sources.
-  * Introduce grub-efi-mips64el* for MIPS Loongson "LEFI" systems.
+  [ Carles Pina i Estany ]
+  * Update translation
 
- -- Mingcong Bai <baimingcong@uniontech.com>  Tue, 14 Jan 2025 14:04:00 +0800
+  [ Felix Zielcke ]
+  * Move d/legacy/* files to grub-legacy.
+  * Remove traces of ../legacy/ dir in d/rules.
 
-grub2 (2.12-1deepin16) unstable; urgency=medium
+  [ Mate Kukri ]
+  * Cherry-pick upstream security patches
+  * Bump SBAT level to grub,5
+  * SECURITY UPDATE: video/readers/jpeg: Do not permit duplicate SOF0 markers in JPEG
+    - CVE-2024-45774
+  * SECURITY UPDATE: commands/extcmd: Missing check for failed allocation
+    - CVE-2024-45775
+  * SECURITY UPDATE: gettext: Integer overflow leads to heap OOB write or read
+    - CVE-2024-45776
+  * SECURITY UPDATE: gettext: Integer overflow leads to heap OOB write
+    - CVE-2024-45777
+  * SECURITY UPDATE: fs/bfs: Integer overflow
+    - CVE-2024-45778
+  * SECURITY UPDATE: fs/bfs: integer overflow leads to heap OOB read
+    - CVE-2024-45779
+  * SECURITY UPDATE: fs/tar: Integer overflow leads to heap OOB write
+    - CVE-2024-45780
+  * SECURITY UPDATE: fs/ufs: `strcpy` use leading to heap OOB write
+    - CVE-2024-45781
+  * SECURITY UPDATE: fs/hfs: `strcpy` use leading to potential heap OOB write
+    - CVE-2024-45782
+  * SECURITY UPDATE: fs/hfsplus: incorrect refcount handling leading to UAF
+    - CVE-2024-45783
+  * SECURITY UPDATE: command/gpg: Use-after-free due to hooks not being removed on module unload
+    - CVE-2025-0622
+  * SECURITY UPDATE: net: Out-of-bounds write in grub_net_search_config_file()
+    - CVE-2025-0624
+  * SECURITY UPDATE: UFS: Integer overflow may lead to heap based out-of-bounds write when handling symlinks
+    - CVE-2025-0677
+  * SECURITY UPDATE: squash4: Integer overflow may lead to heap based out-of-bounds write when reading data
+    - CVE-2025-0678
+  * SECURITY UPDATE: reiserfs: Integer overflow when handling symlinks may lead to heap based out-of-bounds write when reading data
+    - CVE-2025-0684
+  * SECURITY UODATE: jfs: Integer overflow when handling symlinks may lead to heap based out-of-bounds write when reading data
+    - CVE-2025-0685
+  * SECURITY UPDATE: romfs: Integer overflow when handling symlinks may lead to heap based out-of-bounds write when reading data
+    - CVE-2025-0686
+  * SECURITY UPDATE: udf: Heap based buffer overflow  in grub_udf_read_block() may lead to arbitrary code execution
+    - CVE-2025-0689
+  * SECURITY UPDATE: read: Integer overflow may lead to out-of-bounds write
+    - CVE-2025-0690
+  * SECURITY UPDATE: commands/dump: The dump command is not in lockdown when secure boot is enabled
+    - CVE-2025-1118
+  * SECURITY UPDATE: fs/hfs: Integer overflow may lead to heap based out-of-bounds write
+    - CVE-2025-1125
+  * SECURITY UPDATE: insmod: incorrect refcount handling leading to UAF [LP: #2055835]
 
-  * fix compile error.
+ -- Mate Kukri <mate.kukri@canonical.com>  Sat, 15 Feb 2025 17:17:14 +0000
 
- -- xinpeng.wang <wangxinpeng@uniontech.com>  Fri, 21 Feb 2025 14:28:48 +0800
+grub2 (2.12-5) unstable; urgency=medium
 
-grub2 (2.12-1deepin15) unstable; urgency=medium
+  * Build-Depend on pkgconf instead of pkg-config.
+  * Update legacy/update-grub to correctly check for grub2 core.img
+  * Correct Breaks+Replaces on grub-efi-arm64-unsigned for grub-efi-arm64-bin.
+    (Closes: #1076235)
 
-  * Adapting to immutable systems.
+ -- Felix Zielcke <fzielcke@z-51.de>  Mon, 15 Jul 2024 17:05:20 +0200
 
- -- xinpeng.wang <wangxinpeng@uniontech.com>  Thu, 13 Feb 2025 15:13:28 +0800
+grub2 (2.12-4) unstable; urgency=medium
 
-grub2 (2.12-1deepin14) unstable; urgency=medium
+  [ Mate Kukri ]
+  * Determine GRUB_DISTRIBUTOR from os-release and fall back to build-time dpkg vendor
 
-  * Support use confidential computing provisioned secrets for disk decryption
+  [ Felix Zielcke ]
+  * Ship gdb_helper.py in dbg packages. (Closes: #1072164)
+  * Update README.source to mention that we're now using gbp-pq instead of git-dpm.
+  * Add grub-pc+grub2-common Breaks: against grub-legacy (<< 0.97-83~).
+  * Upload to unstable.
 
- -- hanliyang <hanliyang@hygon.cn>  Fri, 15 Nov 2024 10:30:11 +0800
+ -- Felix Zielcke <fzielcke@z-51.de>  Wed, 10 Jul 2024 09:18:01 +0200
 
-grub2 (2.12-1deepin13) unstable; urgency=medium
+grub2 (2.12-3) experimental; urgency=medium
 
-  * Support hygon tpcm
+  [ Colin Watson ]
+  * Update signing-template Uploaders to match main package.
 
- -- xiangzelong <xiangzelong@deepin.org>  Thu, 05 Sep 2024 15:00:21 +0800
+  [ Mate Kukri ]
+  * d/p/mkconfig-ubuntu-recovery.patch: Use "recovery" instead of "single recovery" for recovery mode bootparams
+  * d/p/revert-term-ns8250-spcr.patch: Revert ACPI SPCR table support (#1062073)
+  * d/p/efidisk-breakup-large-reads.patch: efidisk: Breakup large reads into batches
+  * Revert "d/p/efidisk-breakup-large-reads.patch: efidisk: Breakup large reads into batches"
 
-grub2 (2.12-1deepin12) unstable; urgency=medium
+  [ Jiajie Chen ]
+  * Enable building for LoongArch64
 
-  * add uniontech0035-block-terminal-output.patch 
+  [ Heinrich Schuchardt ]
+  * d/rules: build monolithic images for all EFI architectures
 
- -- deepin <liujianqiang@uniontech.com>  Wed, 04 Sep 2024 17:25:54 +0800
+  [ Julian Andres Klode ]
+  * Introduce new -unsigned packages to house the pre-built .efi binaries
+  * signing: Use the -unsigned packages as signed build-depends
 
-grub2 (2.12-1deepin11) unstable; urgency=medium
+  [ Jiajie Chen ]
+  * d/p/sb/efi-use-peimage-shim.patch: add loong64 suppport
 
-  * fix boot_counter error
+  [ Felix Zielcke ]
+  * Update Breaks/Replaces -efi-{ia32,amd64}-bin to << 2.12-3~ at -unsigned packages.
 
- -- ssk-wh <fanpengcheng@uniontech.com>  Wed, 21 Aug 2024 16:16:36 +0800
+  [ Pascal Hambourg ]
+  * 05_debian_theme: cache background picture if not in /boot/grub filesystem
+  * debian/default/grub: Replace 'vbeinfo' with 'videoinfo'
+  * debian/default/grub: Document /etc/default/grub.d/*.cfg
 
-grub2 (2.12-1deepin10) unstable; urgency=medium
+  [ Tianyu Chen ]
+  * Make grub-common Breaks grub-efi-*-signed (<< 1+2.12~rc1)
 
-  * reimplement boot_counter
+ -- Julian Andres Klode <juliank@ubuntu.com>  Thu, 25 Apr 2024 16:52:04 +0200
 
- -- ssk-wh <fanpengcheng@uniontech.com>  Wed, 14 Aug 2024 14:52:05 +0800
+grub2 (2.12-2) unstable; urgency=medium
 
-grub2 (2.12-1deepin9) unstable; urgency=medium
+  [ Mate Kukri ]
+  * Revert peimage to re-use GRUB's image handle (LP: #2057679) (LP: #2054127)
+  * d/build-efi-images: Make sure downstream didn't remove peimage SBAT
+    entry
+  * SECURITY UPDATE: Use-after-free in peimage module [LP: #2054127]
+    - CVE-2024-2312
 
-  * set GRUB_DEVICE by env when root is overlayfs
+  [ Julian Andres Klode ]
+  * Bump SBAT level to `grub.peimage,2`; and also bump `grub.debian,5` to
+    make sure we can revoke any downstream users of peimage that forgot to
+    include the grub.peimage component if that should become necessary.
 
- -- xiamengliang <xiamengliang@uniontech.com>  Thu, 01 Aug 2024 16:36:49 +0800
-
-grub2 (2.12-1deepin8) unstable; urgency=medium
-
-  * (loong64) Introduce a patch for old-world firmware compatibility.
-
- -- Mingcong Bai <baimingcong@uniontech.com>  Thu, 08 Aug 2024 11:34:13 +0800
-
-grub2 (2.12-1deepin7) unstable; urgency=medium
-
-  * grub-mkrescue: use upper-case paths for EFI images.
-    * This is needed to generate bootable ISOs on Loongson firmware.
-    * /efi/boot/bootloongarch64.efi => /EFI/BOOT/BOOTLOONGARCH64.EFI.
-    * This shouldn't cause problems with other architectures, AFAIK.
-  * See: https://lists.gnu.org/archive/html/grub-devel/2024-06/msg00101.html
-
- -- Mingcong Bai <baimingcong@uniontech.com>  Thu, 13 Jun 2024 19:36:24 +0800
-
-grub2 (2.12-1deepin6) unstable; urgency=medium
-
-  * x64: Also install signed efi to grub.efi.
-
- -- Tianyu Chen <sweetyfish@deepin.org>  Fri, 29 Mar 2024 11:56:19 +0800
-
-grub2 (2.12-1deepin5) unstable; urgency=medium
-
-  * Disable verification of font files.
-    Revert https://lists.gnu.org/archive/html/grub-devel/2022-11/msg00067.html.
-
- -- Tianyu Chen <sweetyfish@deepin.org>  Mon, 25 Mar 2024 21:35:13 +0800
-
-grub2 (2.12-1deepin4) unstable; urgency=medium
-
-  * Do not use fwsetup --is-supported.
-    Ref: https://github.com/linuxdeepin/developer-center/issues/7523
-
- -- Tianyu Chen <sweetyfish@deepin.org>  Mon, 18 Mar 2024 11:02:22 +0800
-
-grub2 (2.12-1deepin3) unstable; urgency=medium
-
-  * remove loongarch64 patch.
-
- -- LiChengGang <lichenggang@uniontech.com>  Wed, 13 Mar 2024 11:18:10 +0800
-
-grub2 (2.12-1deepin2) unstable; urgency=medium
-
-  * Apply patches from deepin grub2 2.06
-
- -- Chang Yang <yangchang@deepin.org>  Fri, 01 Mar 2024 17:04:21 +0800
-
-grub2 (2.12-1deepin1) unstable; urgency=medium
-
-  * Enable EFI for loong64
-
- -- Chang Yang <yangchang@deepin.org>  Sun, 18 Feb 2024 11:28:56 +0800
+ -- Julian Andres Klode <jak@debian.org>  Fri, 05 Apr 2024 20:45:55 +0200
 
 grub2 (2.12-1) unstable; urgency=medium
 

@@ -1,14 +1,14 @@
 # Czech translation of grub2 debconf messages.
 # Copyright (C) YEAR THE PACKAGE'S COPYRIGHT HOLDER
 # This file is distributed under the same license as the grub2 package.
-# Miroslav Kure <kurem@debian.cz>, 2008 -- 2017
+# Miroslav Kure <kurem@debian.cz>, 2008 -- 2023
 #
 msgid ""
 msgstr ""
 "Project-Id-Version: grub2\n"
 "Report-Msgid-Bugs-To: grub2@packages.debian.org\n"
-"POT-Creation-Date: 2023-07-28 14:49+0200\n"
-"PO-Revision-Date: 2017-01-22 11:18+0100\n"
+"POT-Creation-Date: 2023-04-23 20:27+0000\n"
+"PO-Revision-Date: 2023-04-28 12:53+0200\n"
 "Last-Translator: Miroslav Kure <kurem@debian.cz>\n"
 "Language-Team: Czech <debian-l10n-czech@lists.debian.org>\n"
 "Language: cs\n"
@@ -379,7 +379,7 @@ msgstr ""
 #. Description
 #: ../templates.in:5001
 msgid "Run os-prober automatically to detect and boot other OSes?"
-msgstr ""
+msgstr "Spouštět os-prober automaticky pro rozpoznání dalších OS?"
 
 #. Type: boolean
 #. Description
@@ -388,6 +388,9 @@ msgid ""
 "GRUB can use the os-prober tool to attempt to detect other operating systems "
 "on your computer and add them to its list of boot options automatically."
 msgstr ""
+"GRUB může použít nástroj os-prober pro rozpoznání dalších operačních "
+"systémů na vašem počítači a automaticky je přidat do seznamu "
+"zaváděných systémů."
 
 #. Type: boolean
 #. Description
@@ -398,6 +401,11 @@ msgid ""
 "installed via LVM or raw disk devices, running os-prober can cause damage to "
 "those guest OSes as it mounts filesystems to look for things."
 msgstr ""
+"Pokud máte na počítači nainstalovanáno více operačních systémů, pak "
+"tuto možnost nejspíš chcete povolit. Jestliže však počítač slouží jako "
+"hostitel pro operační systémy hostované na LVM nebo surových diskových "
+"zařízeních, mohou být tyto operační systémy poškozeny, protože os-prober "
+"musí při hledání dané souborové systémy připojit."
 
 #. Type: string
 #. Description
