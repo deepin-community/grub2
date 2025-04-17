@@ -21,7 +21,7 @@ This patch header follows DEP-3: http://dep.debian.net/deps/dep3/
 -gettext_printf "Adding boot menu entry for UEFI Firmware Settings ...\n" >&2
 +if [ -e "$OS_INDICATIONS" ] && \
 +   [ "$(( $(printf 0x%x \'"$(cat $OS_INDICATIONS | cut -b5)"\') & 1 ))" = 1 ]; then
-+  LABEL="UEFI Firmware Settings"
++  LABEL="System Setup"
  
 -gettext_printf "System Setup" >/dev/null 2>&1
 -gettext_printf "UnionTech OS Restore" >/dev/null 2>&1
@@ -41,7 +41,7 @@ This patch header follows DEP-3: http://dep.debian.net/deps/dep3/
 -			fwsetup
 -		}
 -	fi
-+menuentry '$LABEL' \$menuentry_id_option 'uefi-firmware' {
++menuentry '$(gettext_printf "System Setup")' \$menuentry_id_option 'uefi-firmware' {
 +        fwsetup
 +}
  fi

@@ -1,3 +1,9 @@
+grub2 (2.12-1deepin18) unstable; urgency=medium
+
+  * add translate for shell.
+
+ -- xinpeng.wang <wangxinpeng@uniontech.com>  Thu, 17 Apr 2025 19:03:04 +0800
+
 grub2 (2.12-1deepin17) unstable; urgency=medium
 
   * Introduce more patches from AOSC-Tracking/grub to fix boot memory
