@@ -33,6 +33,12 @@ efi_name="$6"
 sbat_csv="$7"
 efi_vendor="${8:-$(dpkg-vendor --query vendor | tr '[:upper:]' '[:lower:]')}"
 
+# make sure downstreams didn't mess up sbat.csv
+if ! grep -q ^grub.peimage $sbat_csv; then
+   echo Missing sbat entry for "grub.peimage" >&2
+   exit 1
+fi
+
 # mkfs.msdos may not be on the default PATH.
 export PATH="$PATH:/sbin:/usr/sbin"
 

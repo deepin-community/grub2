@@ -2,7 +2,6 @@
 Description=Record successful boot for GRUB
 After=suspend.target hibernate.target hybrid-sleep.target suspend-then-hibernate.target
 ConditionPathExists=/boot/grub/grub.cfg
-ConditionPathIsReadWrite=/boot
 
 [Service]
 Type=oneshot

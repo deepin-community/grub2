@@ -10,14 +10,14 @@ msgstr ""
 "Project-Id-Version: grub2 2.02~beta3-4\n"
 "Report-Msgid-Bugs-To: grub2@packages.debian.org\n"
 "POT-Creation-Date: 2023-07-28 14:49+0200\n"
-"PO-Revision-Date: 2017-01-23 17:31+0100\n"
+"PO-Revision-Date: 2024-08-17 13:33+0200\n"
 "Last-Translator: Innocent De Marchi <tangram.peces@gmail.com>\n"
 "Language-Team: Catalan <debian-l10n-catalan@lists.debian.org>\n"
 "Language: ca\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"X-Generator: Poedit 1.8.11\n"
+"X-Generator: Poedit 2.4.2\n"
 
 #. Type: boolean
 #. Description
@@ -393,6 +393,8 @@ msgstr ""
 #: ../templates.in:5001
 msgid "Run os-prober automatically to detect and boot other OSes?"
 msgstr ""
+"Voleu executar «os-prober» per detectar automàticament i arrencar altres "
+"sistemes operatius?"
 
 #. Type: boolean
 #. Description
@@ -401,6 +403,9 @@ msgid ""
 "GRUB can use the os-prober tool to attempt to detect other operating systems "
 "on your computer and add them to its list of boot options automatically."
 msgstr ""
+"El GRUB pot usar l'eina «os-prober» per mirar de detectar altres sistemes "
+"operatius a l'ordinador i afegir-los automàticament a la llista d'opcions "
+"d'arrencada."
 
 #. Type: boolean
 #. Description
@@ -411,6 +416,11 @@ msgid ""
 "installed via LVM or raw disk devices, running os-prober can cause damage to "
 "those guest OSes as it mounts filesystems to look for things."
 msgstr ""
+"Si l'ordinador té diversos sistemes operatius instal·lats, probablement això "
+"és el que voldreu. Tanmateix, si l'ordinador fa d'amfitrió d'altres sistemes "
+"operatius instal·lats via LVM o amb discos «en cru», executar l'«os-prober» "
+"pot causar maleses a aquests sistemes operatius atès que munta els sistemes "
+"de fitxers per a buscar-hi coses."
 
 #. Type: string
 #. Description

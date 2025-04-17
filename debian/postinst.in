@@ -733,7 +733,7 @@ case "$1" in
           grub-efi-arm)   target=arm-efi ;;
           grub-efi-arm64) target=arm64-efi ;;
           grub-efi-riscv64) target=riscv64-efi ;;
-	  grub-efi-loong64) target=loong64-efi ;;
+          grub-efi-loong64) target=loongarch64-efi ;;
         esac
         if [ "$bootloader_id" ] && [ -e "/boot/grub/$target/core.efi" ]; then
           db_get grub2/force_efi_extra_removable
