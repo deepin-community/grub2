@@ -1,3 +1,10 @@
+grub2 (2.12-7deepin2) unstable; urgency=medium
+
+  * fix grub-pc install fail in noninteractive mode.
+  * support translate in all arch types
+
+ -- xinpeng.wang <wangxinpeng@uniontech.com>  Fri, 25 Apr 2025 17:17:09 +0800
+
 grub2 (2.12-7deepin1) unstable; urgency=medium
 
   * Apply patches from deepin grub2 2.06.

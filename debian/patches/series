@@ -153,7 +153,7 @@ cve-2025-jan/fs-xfs-Handle-root-inode-read-failure-in-grub_xfs_mount.patch
 0016-loongson_xfs_install_grub_add_fonts.patch
 0018-add-custom-keywords-translation.patch
 0019-fix-grub.patch
-0025-fix-when-installing-the-package-execute-update-grub.patch
+#0025-fix-when-installing-the-package-execute-update-grub.patch
 0026-fix-Del-lockdown-reg.patch
 0027-fix-can-not-boot-bug.patch
 0029-fix-arm64-terminal-output-to-console.patch

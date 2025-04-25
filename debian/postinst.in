@@ -528,6 +528,13 @@ case "$1" in
         elif test -e /boot/grub/core.img || \
              test -e /boot/grub/@FIRST_CPU_PLATFORM@/core.img || \
              test "$UPGRADE_FROM_GRUB_LEGACY" || test "$wubi_device"; then
+          # avoid grub-pc/install_devices to be NULL when non-interact install was performed
+          db_get grub-pc/install_devices
+          if [ "x$RET" == "x" ];then
+              install_partition=`df /boot/grub|egrep "^/dev"|awk '{print $1}'`
+              install_devices="/dev/"`lsblk -s $install_partition |grep disk|awk '{print $1}'|sed -e 's/[^a-zA-Z0-9]//g'|sort|uniq`
+              db_set grub-pc/install_devices $install_devices
+          fi
           question=grub-pc/install_devices
           priority=high
           device_map="$(grub-mkdevicemap -m - | grep -v '^(fd[0-9]\+)' || true)"
