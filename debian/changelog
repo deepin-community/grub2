@@ -1,3 +1,9 @@
+grub2 (2.12-7deepin3) unstable; urgency=medium
+
+  * fix compile error.
+
+ -- xinpeng.wang <wangxinpeng@uniontech.com>  Fri, 25 Apr 2025 18:27:58 +0800
+
 grub2 (2.12-7deepin2) unstable; urgency=medium
 
   * fix grub-pc install fail in noninteractive mode.
