@@ -1,3 +1,9 @@
+grub2 (2.12-7deepin4) unstable; urgency=medium
+
+  * update efi files for loongarch
+
+ -- bluesky <chenchongbiao@deepin.org>  Mon, 12 May 2025 13:40:59 +0800
+
 grub2 (2.12-7deepin3) unstable; urgency=medium
 
   * fix compile error.

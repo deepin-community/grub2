@@ -333,6 +333,36 @@ run_grub_install()
     fi
 }
 
+record_loongarch_efi_files()
+{
+  local target_file target_hash file_name source_hash
+
+  source_hash=$(sha256sum "$source_file" | awk '{print $1}')
+  for target_file in "$boot_efi_dir"/*; do
+    target_hash=$(sha256sum "$target_file" | awk '{print $1}')
+    if [ "$target_hash" == "$source_hash" ]; then
+        file_name=$(basename "$target_file")
+        loongarch_efi_files+=("$file_name")
+    fi
+  done
+}
+
+update_efi_files_for_loongarch() {
+  local file target_file target_hash source_hash
+
+  source_hash=$(sha256sum "$source_file" | awk '{print $1}')
+  for file in "${loongarch_efi_files[@]}"; do
+    target_file="$boot_efi_dir/$file"
+    if [ -f "$target_file" ]; then
+      target_hash=$(sha256sum "$target_file" | awk '{print $1}')
+
+      if [ "$source_hash" != "$target_hash" ]; then
+        cp "$source_file" "$target_file"
+      fi
+    fi
+  done
+}
+
 case "$1" in
   configure)
     . /usr/share/debconf/confmodule
@@ -729,6 +759,13 @@ case "$1" in
       grub-efi-ia32|grub-efi-amd64|grub-efi-ia64|grub-efi-arm|grub-efi-arm64|grub-efi-riscv64|grub-efi-loong64)
         bootloader_id="$(config_item GRUB_DISTRIBUTOR | tr A-Z a-z | \
                          cut -d' ' -f1)"
+        if [ @PACKAGE@ = grub-efi-loong64 ]; then
+          distro_efi_dir="/boot/efi/EFI/$bootloader_id"
+          boot_efi_dir="/boot/efi/EFI/BOOT"
+          source_file="$distro_efi_dir/grubloongarch64.efi"
+          declare -a loongarch_efi_files=()
+          record_loongarch_efi_files
+        fi
         case $bootloader_id in
           kubuntu) bootloader_id=ubuntu ;;
           devuan) bootloader_id=debian ;;
@@ -760,6 +797,10 @@ case "$1" in
 
         if type update-secureboot-policy >/dev/null 2>&1; then
           update-secureboot-policy || true
+        fi
+
+        if [ @PACKAGE@ = grub-efi-loong64 ]; then
+          update_efi_files_for_loongarch
         fi
       ;;
 
