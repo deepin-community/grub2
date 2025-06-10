@@ -1,3 +1,9 @@
+grub2 (2.12-7deepin5) unstable; urgency=medium
+
+  * mips not support zh_CN.
+
+ -- xinpeng.wang <wangxinpeng@uniontech.com>  Tue, 10 Jun 2025 19:13:48 +0800
+
 grub2 (2.12-7deepin4) unstable; urgency=medium
 
   * update efi files for loongarch
