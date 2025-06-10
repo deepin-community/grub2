@@ -1,0 +1,15 @@
+Index: grub2/util/grub-mkconfig.in
+===================================================================
+--- grub2.orig/util/grub-mkconfig.in	2025-06-10 17:10:47.000000000 +0800
++++ grub2/util/grub-mkconfig.in	2025-06-10 17:17:41.297169413 +0800
+@@ -208,6 +208,10 @@
+     esac
+ done
+ 
++if [ "$(uname -m)" = "mips64" ]; then
++    export LANG=C;
++fi
++
+ GRUB_ACTUAL_DEFAULT="$GRUB_DEFAULT"
+ 
+ if [ "x${GRUB_ACTUAL_DEFAULT}" = "xsaved" ] ; then GRUB_ACTUAL_DEFAULT="`"${grub_editenv}" - list | sed -n '/^saved_entry=/ s,^saved_entry=,,p'`" ; fi
