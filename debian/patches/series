@@ -204,3 +204,6 @@ mips/0013-fix-include-add-a-small-header-to-dummy-boot.h-and-t.patch
 mips/0014-loader-mips64-linux-properly-prepare-memory-for-init.patch
 mips/0015-fix-util-grub-mkimagexx-unconditionaly-use-64-bit-ad.patch
 uniontech-mips-set-lang-c.patch
+
+# backport: fix riscv64 rdcycle
+use-time-register-in-grub_efi_get_time_ms.patch

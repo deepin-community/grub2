@@ -1,3 +1,10 @@
+grub2 (2.12-7deepin6) unstable; urgency=medium
+
+  * kern/riscv/efi/init: Use time register in grub_efi_get_time_ms()
+    (backport from c5ae124e11f28f637cbd38cb4d6c1b9817baa135)
+
+ -- Chang Yang <yangchang@deepin.org>  Thu, 18 Sep 2025 17:08:48 +0800
+
 grub2 (2.12-7deepin5) unstable; urgency=medium
 
   * mips not support zh_CN.
