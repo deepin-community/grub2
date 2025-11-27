@@ -164,6 +164,10 @@ endif
 DPKG_VENDOR ?= $(shell dpkg-vendor --query vendor)
 SB_EFI_VENDOR ?= $(shell dpkg-vendor --query vendor | tr '[:upper:]' '[:lower:]')
 
+DPKG_VENDOR = Deepin
+SB_EFI_VENDOR = deepin
+
+
 %:
 	dh $@ --with=bash_completion
 

@@ -144,6 +144,14 @@ cve-2025-jan/fs-ext2-Rework-out-of-bounds-read-for-inline-and-external.patch
 cve-2025-jan/fs-xfs-Fix-grub_xfs_iterate_dir-return-value-in-case-of-f.patch
 cve-2025-jan/fs-xfs-Propagate-incorrect-inode-error-from-grub_xfs_read.patch
 cve-2025-jan/fs-xfs-Handle-root-inode-read-failure-in-grub_xfs_mount.patch
+cve-2025-nov/commands-test-Fix-error-in-recursion-depth-calculati.patch
+cve-2025-nov/kern-file-Call-grub_dl_unref-after-fs-fs_close.patch
+cve-2025-nov/net-net-Unregister-net_set_vlan-command-on-unload.patch
+cve-2025-nov/gettext-gettext-Unregister-gettext-command-on-module.patch
+cve-2025-nov/normal-main-Unregister-commands-on-module-unload.patch
+cve-2025-nov/tests-lib-functional_test-Unregister-commands-on-mod.patch
+cve-2025-nov/commands-usbtest-Use-correct-string-length-field.patch
+cve-2025-nov/commands-usbtest-Ensure-string-length-is-sufficient-.patch
 0001_grub2_2.02_beta3-4_deepin-gfxmode-mod.patch
 0003-fix_grub_efidisk_open_logic.patch
 0006-fix-loongson-laptop-blurry-screen.patch
