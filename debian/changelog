@@ -1,3 +1,11 @@
+grub2 (2.12-7deepin7) unstable; urgency=medium
+
+  * Apply cve-2025-nov patch series.
+  * Bump SBAT 'grub' entry to 6.
+  * Set DPKG_VENDOR to Deepin, SB_EFI_VENDOR to deepin.
+
+ -- Tianyu Chen <sweetyfish@deepin.org>  Thu, 27 Nov 2025 16:15:11 +0800
+
 grub2 (2.12-7deepin6) unstable; urgency=medium
 
   * kern/riscv/efi/init: Use time register in grub_efi_get_time_ms()
