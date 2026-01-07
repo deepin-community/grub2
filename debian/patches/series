@@ -215,3 +215,5 @@ uniontech-mips-set-lang-c.patch
 
 # backport: fix riscv64 rdcycle
 use-time-register-in-grub_efi_get_time_ms.patch
+
+deepin/0006-grub-install-support-secureboot-detect-for-loongarch.patch

@@ -1,3 +1,9 @@
+grub2 (2.12-7deepin8) unstable; urgency=medium
+
+  * grub-install support secureboot detect for loongarch64
+
+ -- zhouzilong <zhouzilong@uniontech.com>  Wed, 07 Jan 2026 16:43:23 +0800
+
 grub2 (2.12-7deepin7) unstable; urgency=medium
 
   * Apply cve-2025-nov patch series.
