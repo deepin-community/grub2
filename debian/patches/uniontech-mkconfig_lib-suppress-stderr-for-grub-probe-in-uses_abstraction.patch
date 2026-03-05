@@ -1,0 +1,13 @@
+Index: grub2/util/grub-mkconfig_lib.in
+===================================================================
+--- grub2.orig/util/grub-mkconfig_lib.in
++++ grub2/util/grub-mkconfig_lib.in
+@@ -347,7 +347,7 @@ uses_abstraction () {
+   IFS='
+ '
+ 
+-  abstraction="`"${grub_probe}" --device ${device} --target=abstraction`"
++  abstraction="`"${grub_probe}" --device ${device} --target=abstraction 2>/dev/null`"
+   for module in ${abstraction}; do
+     if test "x${module}" = "x$2"; then
+       IFS="$old_ifs"

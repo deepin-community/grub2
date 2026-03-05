@@ -217,3 +217,4 @@ uniontech-mips-set-lang-c.patch
 use-time-register-in-grub_efi_get_time_ms.patch
 
 deepin/0006-grub-install-support-secureboot-detect-for-loongarch.patch
+uniontech-mkconfig_lib-suppress-stderr-for-grub-probe-in-uses_abstraction.patch

@@ -1,3 +1,11 @@
+grub2 (2.12-7deepin9) unstable; urgency=medium
+
+  * Silence stderr in uses_abstraction function within grub-mkconfig_lib.
+  * This prevents confusing memory leak warnings and error messages when 
+    grub-probe encounters unsupported encryption algorithms like SM4.
+
+ -- xinpeng.wang <wangxinpeng@uniontech.com>  Thu, 05 Mar 2026 20:56:00 +0800
+
 grub2 (2.12-7deepin8) unstable; urgency=medium
 
   * grub-install support secureboot detect for loongarch64
