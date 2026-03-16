@@ -1,0 +1,36 @@
+Index: grub2/po/zh_CN.po
+===================================================================
+--- grub2.orig/po/zh_CN.po
++++ grub2/po/zh_CN.po
+@@ -7440,7 +7440,7 @@ msgid "Advanced options for %s"
+ msgstr "%s 的高级选项"
+ 
+ 
+-#: util/grub.d/15_linux_bar.in:40
++#: util/grub.d/30_uefi-firmware.in:40
+ #~ msgid "UnionTech OS Restore"
+ #~ msgstr "系统还原"
+ 
+@@ -7448,6 +7448,10 @@ msgstr "%s 的高级选项"
+ msgid "System Setup"
+ msgstr "系统设置"
+ 
++#: util/grub.d/30_uefi-firmware.in:49
++msgid "System Rescue"
++msgstr "系统修复"
++
+ #: util/grub.d/10_illumos.in:40
+ #, c-format
+ msgid "Loading kernel of Illumos ..."
+Index: grub2/util/grub.d/30_uefi-firmware.in
+===================================================================
+--- grub2.orig/util/grub.d/30_uefi-firmware.in
++++ grub2/util/grub.d/30_uefi-firmware.in
+@@ -45,6 +45,7 @@ if [ -e "$OS_INDICATIONS" ] && \
+ 
+   gettext_printf "System Setup" >/dev/null 2>&1
+   gettext_printf "UnionTech OS Restore" >/dev/null 2>&1
++  gettext_printf "System Rescue" >/dev/null 2>&1
+ 
+   if [ "x$hw_support" != x"true" ];then
+     cat << EOF
