@@ -1,3 +1,9 @@
+grub2 (2.12-7deepin10) unstable; urgency=medium
+
+  * feat(i18n): Add Chinese translation for "System Rescue" menu entry.
+
+ -- xinpeng.wang <wangxinpeng@uniontech.com>  Mon, 16 Mar 2026 17:50:56 +0800
+
 grub2 (2.12-7deepin9) unstable; urgency=medium
 
   * Silence stderr in uses_abstraction function within grub-mkconfig_lib.
