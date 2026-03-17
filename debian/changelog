@@ -1,3 +1,12 @@
+grub2 (2.12-7deepin11) unstable; urgency=medium
+
+  * fix(util): Skip directory entries with .mo/.gmo suffix in copy_locales().
+    On some systems, there may be directories under /usr/share/locale/ with
+    names ending in .gmo (e.g., fi.gmo/), which causes grub-install to fail
+    when it tries to copy them as regular files.
+
+ -- lichenggang <lichenggang@uniontech.com>  Tue, 17 Mar 2026 09:30:00 +0800
+
 grub2 (2.12-7deepin10) unstable; urgency=medium
 
   * feat(i18n): Add Chinese translation for "System Rescue" menu entry.
