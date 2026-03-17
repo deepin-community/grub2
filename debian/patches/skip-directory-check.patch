@@ -1,0 +1,27 @@
+Description: fix(util): skip directory entries with .mo/.gmo suffix in copy_locales()
+ On some systems, there may be directories under /usr/share/locale/ with
+ names ending in .gmo (e.g., fi.gmo/), which causes grub-install to fail
+ when it tries to copy them as regular files.
+ Fix: In copy_locales(), check if a .mo or .gmo entry is a directory
+ before attempting to copy it. If it is a directory, skip it.
+ This patch must be applied after install-locale-langpack.patch.
+Author: lichenggang <lichenggang@uniontech.com>
+Forwarded: backported-from-upstream
+Last-Update: 2026-03-17
+
+Index: grub2/util/grub-install-common.c
+===================================================================
+--- grub2.orig/util/grub-install-common.c
++++ grub2/util/grub-install-common.c
+@@ -822,6 +822,11 @@ copy_locales (const char *dstd, int langpack)
+ 		  || grub_strcmp (ext, ".gmo") == 0))
+ 	{
+ 	  srcf = grub_util_path_concat (2, dir, de->d_name);
++	  if (grub_util_is_directory (srcf))
++	    {
++	      free (srcf);
++	      continue;
++	    }
+ 	  dstf = grub_util_path_concat (2, dstd, de->d_name);
+ 	  ext = grub_strrchr (dstf, '.');
+ 	  grub_strcpy (ext, ".mo");

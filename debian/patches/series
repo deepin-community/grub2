@@ -10,6 +10,7 @@ gettext-quiet.patch
 install-efi-fallback.patch
 mkconfig-ubuntu-recovery.patch
 install-locale-langpack.patch
+skip-directory-check.patch
 mkconfig-nonexistent-loopback.patch
 default-grub-d.patch
 blacklist-1440x900x32.patch
