@@ -1,0 +1,1749 @@
+From 3786978bd9163ec71dea71c567a68c14fed4dadd Mon Sep 17 00:00:00 2001
+From: sunway_fw <sunway_fw@wxiat.com>
+Date: Thu, 14 May 2026 11:41:58 +0800
+Subject: [PATCH] sw64: Add auxiliary files
+
+To support a new architecture we need to provide a few helper functions
+for memory, cache, timer, etc support.
+
+Signed-off-by: sunway_fw <sunway_fw@wxiat.com>
+---
+ grub-core/kern/efi/mm.c            |   2 +-
+ grub-core/kern/sw64/cache.c        |  63 +++
+ grub-core/kern/sw64/cache_flush.S  |  44 ++
+ grub-core/kern/sw64/dl_helper.c    |  71 +++
+ grub-core/kern/sw64/efi/callwrap.S | 261 +++++++++++
+ grub-core/kern/sw64/efi/init.c     |  85 ++++
+ grub-core/lib/sw64/divide.S        | 677 +++++++++++++++++++++++++++++
+ grub-core/lib/sw64/setjmp.S        |  75 ++++
+ include/grub/efi/efi.h             |   2 +-
+ include/grub/sw64/divide.h         |  11 +
+ include/grub/sw64/efi/memory.h     |   7 +
+ include/grub/sw64/efi/time.h       |  23 +
+ include/grub/sw64/io.h             |  62 +++
+ include/grub/sw64/jmpbuf-offsets.h |  35 ++
+ include/grub/sw64/kernel.h         |  25 ++
+ include/grub/sw64/regdef.h         |  44 ++
+ include/grub/sw64/setjmp.h         |  27 ++
+ include/grub/sw64/time.h           |  28 ++
+ include/grub/sw64/types.h          |  32 ++
+ 19 files changed, 1572 insertions(+), 2 deletions(-)
+ create mode 100644 grub-core/kern/sw64/cache.c
+ create mode 100644 grub-core/kern/sw64/cache_flush.S
+ create mode 100644 grub-core/kern/sw64/dl_helper.c
+ create mode 100644 grub-core/kern/sw64/efi/callwrap.S
+ create mode 100644 grub-core/kern/sw64/efi/init.c
+ create mode 100644 grub-core/lib/sw64/divide.S
+ create mode 100644 grub-core/lib/sw64/setjmp.S
+ create mode 100644 include/grub/sw64/divide.h
+ create mode 100644 include/grub/sw64/efi/memory.h
+ create mode 100644 include/grub/sw64/efi/time.h
+ create mode 100644 include/grub/sw64/io.h
+ create mode 100644 include/grub/sw64/jmpbuf-offsets.h
+ create mode 100644 include/grub/sw64/kernel.h
+ create mode 100644 include/grub/sw64/regdef.h
+ create mode 100644 include/grub/sw64/setjmp.h
+ create mode 100644 include/grub/sw64/time.h
+ create mode 100644 include/grub/sw64/types.h
+
+diff --git a/grub-core/kern/efi/mm.c b/grub-core/kern/efi/mm.c
+index 6a6fba8..98578f9 100644
+--- a/grub-core/kern/efi/mm.c
++++ b/grub-core/kern/efi/mm.c
+@@ -657,7 +657,7 @@ grub_efi_mm_init (void)
+ }
+ 
+ #if defined (__aarch64__) || defined (__arm__) || defined (__riscv) || \
+-  defined (__loongarch__)
++  defined (__loongarch__) || defined (__sw_64__)
+ grub_err_t
+ grub_efi_get_ram_base(grub_addr_t *base_addr)
+ {
+diff --git a/grub-core/kern/sw64/cache.c b/grub-core/kern/sw64/cache.c
+new file mode 100644
+index 0000000..2c19b8b
+--- /dev/null
++++ b/grub-core/kern/sw64/cache.c
+@@ -0,0 +1,63 @@
++/*
++ *  GRUB  --  GRand Unified Bootloader
++ *  Copyright (C) 2026  Free Software Foundation, Inc.
++ *
++ *  GRUB is free software: you can redistribute it and/or modify
++ *  it under the terms of the GNU General Public License as published by
++ *  the Free Software Foundation, either version 3 of the License, or
++ *  (at your option) any later version.
++ *
++ *  GRUB is distributed in the hope that it will be useful,
++ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
++ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ *  GNU General Public License for more details.
++ *
++ *  You should have received a copy of the GNU General Public License
++ *  along with GRUB.  If not, see <http://www.gnu.org/licenses/>.
++ */
++
++#include <grub/cache.h>
++#include <grub/misc.h>
++
++static grub_int64_t dlinesz;
++static grub_int64_t ilinesz;
++
++/* Prototypes for asm functions. */
++void grub_arch_clean_dcache_range (grub_addr_t beg, grub_addr_t end,
++				   grub_size_t line_size);
++void grub_arch_invalidate_icache_range (grub_addr_t beg, grub_addr_t end,
++					grub_size_t line_size);
++
++static void
++probe_caches (void)
++{
++  /* TODO */
++  dlinesz = 128;
++  ilinesz = 128;
++}
++
++void
++grub_arch_sync_caches (void *address, grub_size_t len)
++{
++  grub_size_t start, end, max_align;
++
++  if (dlinesz == 0)
++    probe_caches();
++  if (dlinesz == 0)
++    grub_fatal ("Unknown cache line size!");
++
++  max_align = dlinesz > ilinesz ? dlinesz : ilinesz;
++
++  start = ALIGN_DOWN ((grub_size_t) address, max_align);
++  end = ALIGN_UP ((grub_size_t) address + len, max_align);
++
++  grub_arch_clean_dcache_range (start, end, dlinesz);
++  grub_arch_invalidate_icache_range (start, end, ilinesz);
++}
++
++void
++grub_arch_sync_dma_caches (volatile void *address __attribute__((unused)),
++			   grub_size_t len __attribute__((unused)))
++{
++  /* DMA incoherent devices not supported yet */
++}
+diff --git a/grub-core/kern/sw64/cache_flush.S b/grub-core/kern/sw64/cache_flush.S
+new file mode 100644
+index 0000000..b26a003
+--- /dev/null
++++ b/grub-core/kern/sw64/cache_flush.S
+@@ -0,0 +1,44 @@
++/*
++ *  GRUB  --  GRand Unified Bootloader
++ *  Copyright (C) 2026  Free Software Foundation, Inc.
++ *
++ *  GRUB is free software: you can redistribute it and/or modify
++ *  it under the terms of the GNU General Public License as published by
++ *  the Free Software Foundation, either version 3 of the License, or
++ *  (at your option) any later version.
++ *
++ *  GRUB is distributed in the hope that it will be useful,
++ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
++ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ *  GNU General Public License for more details.
++ *
++ *  You should have received a copy of the GNU General Public License
++ *  along with GRUB.  If not, see <http://www.gnu.org/licenses/>.
++ */
++
++#include <grub/symbol.h>
++
++	.file	"cache_flush.S"
++	.text
++
++/*
++ * Simple cache maintenance functions
++ */
++
++/*
++ * a0 - *beg (inclusive)
++ * a1 - *end (exclusive)
++ * a2 - line size
++*/
++FUNCTION(grub_arch_clean_dcache_range)
++	/* TODO */
++	ret
++
++/*
++ * a0 - *beg (inclusive)
++ * a1 - *end (exclusive)
++ * a2 - line size
++ */
++FUNCTION(grub_arch_invalidate_icache_range)
++	memb
++	ret
+diff --git a/grub-core/kern/sw64/dl_helper.c b/grub-core/kern/sw64/dl_helper.c
+new file mode 100644
+index 0000000..856978f
+--- /dev/null
++++ b/grub-core/kern/sw64/dl_helper.c
+@@ -0,0 +1,71 @@
++/* dl.c - arch-dependent part of loadable module support */
++/*
++ *  GRUB  --  GRand Unified Bootloader
++ *  Copyright (C) 2002,2004,2005,2007,2009,2026  Free Software Foundation, Inc.
++ *
++ *  GRUB is free software: you can redistribute it and/or modify
++ *  it under the terms of the GNU General Public License as published by
++ *  the Free Software Foundation, either version 3 of the License, or
++ *  (at your option) any later version.
++ *
++ *  GRUB is distributed in the hope that it will be useful,
++ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
++ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ *  GNU General Public License for more details.
++ *
++ *  You should have received a copy of the GNU General Public License
++ *  along with GRUB.  If not, see <http://www.gnu.org/licenses/>.
++ */
++
++#include <grub/dl.h>
++#include <grub/elf.h>
++#include <grub/misc.h>
++#include <grub/err.h>
++#include <grub/mm.h>
++
++#pragma GCC diagnostic ignored "-Wcast-align"
++
++grub_err_t
++grub_sw64_dl_get_tramp_got_size (const void *ehdr, grub_size_t *tramp,
++				 grub_size_t *got)
++{
++  const Elf64_Ehdr *e = ehdr;
++  grub_size_t cntt = 0, cntg = 0;
++  const Elf64_Shdr *s;
++  unsigned i;
++
++  *tramp = 0;
++  *got = 0;
++
++  /* Find a symbol table.  */
++  for (i = 0, s = (Elf64_Shdr *) ((char *) e + grub_le_to_cpu32 (e->e_shoff));
++       i < grub_le_to_cpu16 (e->e_shnum);
++       i++, s = (Elf64_Shdr *) ((char *) s + grub_le_to_cpu16 (e->e_shentsize)))
++    if (grub_le_to_cpu32 (s->sh_type) == SHT_SYMTAB)
++      break;
++
++  if (i == grub_le_to_cpu16 (e->e_shnum))
++    return GRUB_ERR_NONE;
++
++  for (i = 0, s = (Elf64_Shdr *) ((char *) e + grub_le_to_cpu32 (e->e_shoff));
++       i < grub_le_to_cpu16 (e->e_shnum);
++       i++, s = (Elf64_Shdr *) ((char *) s + grub_le_to_cpu16 (e->e_shentsize)))
++    if (grub_le_to_cpu32 (s->sh_type) == SHT_RELA)
++      {
++	Elf64_Rela *rel, *max;
++
++	for (rel = (Elf64_Rela *) ((char *) e + grub_le_to_cpu32 (s->sh_offset)),
++	       max = rel + grub_le_to_cpu32 (s->sh_size) / grub_le_to_cpu16 (s->sh_entsize);
++	     rel < max; rel++)
++	  switch (ELF64_R_TYPE (grub_le_to_cpu32 (rel->r_info)))
++	    {
++	    case R_SW64_LITERAL:
++	      cntg++;
++	      break;
++	    }
++      }
++  *tramp = cntt;
++  *got = cntg * sizeof (grub_uint64_t);
++
++  return GRUB_ERR_NONE;
++}
+diff --git a/grub-core/kern/sw64/efi/callwrap.S b/grub-core/kern/sw64/efi/callwrap.S
+new file mode 100644
+index 0000000..13ee13d
+--- /dev/null
++++ b/grub-core/kern/sw64/efi/callwrap.S
+@@ -0,0 +1,261 @@
++	.file   "callwrap.S"
++	.text
++	.align 4
++	.globl  sw_efi_wrap_0
++	.globl  sw_efi_wrap_1
++	.globl  sw_efi_wrap_2
++	.globl  sw_efi_wrap_3
++	.globl  sw_efi_wrap_4
++	.globl  sw_efi_wrap_5
++	.globl  sw_efi_wrap_6
++	.globl  sw_efi_wrap_7
++	.globl  sw_efi_wrap_10
++
++	.ent sw_efi_wrap_0
++sw_efi_wrap_0:
++
++	ldi $30,-32($30)
++	stl $26,0($30)
++	stl $15,8($30)
++	mov $30,$15
++	.prologue 1
++	stl $16,16($15)
++	ldl $27,16($15)
++	call $26,($27),0
++	#ldi $29,0($29)          !gpdisp!29
++	mov $15,$30
++	ldl $26,0($30)
++	ldl $15,8($30)
++	ldi $30,32($30)
++	ret $31,($26),1
++
++	.end sw_efi_wrap_0
++
++	.ent sw_efi_wrap_1
++sw_efi_wrap_1:
++
++	ldi $30,-32($30)
++        stl $26,0($30)
++        stl $15,8($30)
++        mov $30,$15
++        .prologue 1
++        stl $16,16($15)
++        stl $17,24($15)
++        ldl $27,16($15)
++        ldl $16,24($15)
++        call $26,($27),0
++       #ldih $29,0($26)         !gpdisp!31
++       #ldi $29,0($29)          !gpdisp!31
++        mov $15,$30
++        ldl $26,0($30)
++        ldl $15,8($30)
++        ldi $30,32($30)
++        ret $31,($26),1
++	.end sw_efi_wrap_1
++
++	.ent sw_efi_wrap_2
++sw_efi_wrap_2:
++	ldi $30,-48($30)
++        stl $26,0($30)
++        stl $15,8($30)
++        mov $30,$15
++        .prologue 1
++        stl $16,16($15)
++        stl $17,24($15)
++        stl $18,32($15)
++        ldl $27,16($15)
++        ldl $16,24($15)
++        ldl $17,32($15)
++        call $26,($27),0
++        #ldih $29,0($26)         !gpdisp!33
++        #ldi $29,0($29)          !gpdisp!33
++        mov $15,$30
++        ldl $26,0($30)
++        ldl $15,8($30)
++        ldi $30,48($30)
++        ret $31,($26),1
++	.end sw_efi_wrap_2
++
++	.ent sw_efi_wrap_3
++sw_efi_wrap_3:
++	ldi $30,-48($30)
++        stl $26,0($30)
++        stl $15,8($30)
++        mov $30,$15
++        .prologue 1
++        stl $16,16($15)
++        stl $17,24($15)
++        stl $18,32($15)
++        stl $19,40($15)
++        ldl $27,16($15)
++        ldl $16,24($15)
++        ldl $17,32($15)
++        ldl $18,40($15)
++        call $26,($27),0
++        #ldih $29,0($26)         !gpdisp!35
++        #ldi $29,0($29)          !gpdisp!35
++        mov $15,$30
++        ldl $26,0($30)
++        ldl $15,8($30)
++        ldi $30,48($30)
++        ret $31,($26),1
++	.end sw_efi_wrap_3
++
++	.ent sw_efi_wrap_4
++sw_efi_wrap_4:
++	ldi $30,-64($30)
++        stl $26,0($30)
++        stl $15,8($30)
++        mov $30,$15
++        .prologue 1
++        stl $16,16($15)
++        stl $17,24($15)
++        stl $18,32($15)
++        stl $19,40($15)
++        stl $20,48($15)
++        ldl $27,16($15)
++        ldl $16,24($15)
++        ldl $17,32($15)
++        ldl $18,40($15)
++        ldl $19,48($15)
++        call $26,($27),0
++        #ldih $29,0($26)         !gpdisp!37
++        #ldi $29,0($29)          !gpdisp!37
++        mov $15,$30
++        ldl $26,0($30)
++        ldl $15,8($30)
++        ldi $30,64($30)
++        ret $31,($26),1
++	.end sw_efi_wrap_4
++
++	.ent sw_efi_wrap_5
++sw_efi_wrap_5:
++	ldi $30,-64($30)
++        stl $26,0($30)
++        stl $15,8($30)
++        mov $30,$15
++        .prologue 1
++        stl $16,16($15)
++        stl $17,24($15)
++        stl $18,32($15)
++        stl $19,40($15)
++        stl $20,48($15)
++        stl $21,56($15)
++        ldl $27,16($15)
++        ldl $16,24($15)
++        ldl $17,32($15)
++        ldl $18,40($15)
++        ldl $19,48($15)
++        ldl $20,56($15)
++        call $26,($27),0
++        #ldih $29,0($26)         !gpdisp!39
++        #ldi $29,0($29)          !gpdisp!39
++        mov $15,$30
++        ldl $26,0($30)
++        ldl $15,8($30)
++        ldi $30,64($30)
++        ret $31,($26),1
++	.end sw_efi_wrap_5
++
++
++	.ent sw_efi_wrap_6
++sw_efi_wrap_6:
++	ldi $30,-64($30)
++        stl $26,0($30)
++        stl $15,8($30)
++        mov $30,$15
++        .prologue 1
++        stl $16,16($15)
++        stl $17,24($15)
++        stl $18,32($15)
++        stl $19,40($15)
++        stl $20,48($15)
++        stl $21,56($15)
++        ldl $27,16($15)
++        ldl $16,24($15)
++        ldl $17,32($15)
++        ldl $18,40($15)
++        ldl $19,48($15)
++        ldl $20,56($15)
++        ldl $21,64($15)
++        call $26,($27),0
++        #ldih $29,0($26)         !gpdisp!41
++        #ldi $29,0($29)          !gpdisp!41
++        mov $15,$30
++        ldl $26,0($30)
++        ldl $15,8($30)
++        ldi $30,64($30)
++        ret $31,($26),1
++	.end sw_efi_wrap_6
++
++	.ent sw_efi_wrap_7
++sw_efi_wrap_7:
++	ldi $30,-80($30)
++        stl $26,16($30)
++        stl $15,24($30)
++        mov $30,$15
++        .prologue 1
++        stl $16,32($15)
++        stl $17,40($15)
++        stl $18,48($15)
++        stl $19,56($15)
++        stl $20,64($15)
++        stl $21,72($15)
++        ldl $1,88($15)
++        stl $1,0($30)
++        ldl $27,32($15)
++        ldl $16,40($15)
++        ldl $17,48($15)
++        ldl $18,56($15)
++        ldl $19,64($15)
++        ldl $20,72($15)
++        ldl $21,80($15)
++        call $26,($27),0
++        #ldih $29,0($26)         !gpdisp!43
++        #ldi $29,0($29)          !gpdisp!43
++        mov $15,$30
++        ldl $26,16($30)
++        ldl $15,24($30)
++        ldi $30,80($30)
++        ret $31,($26),1
++	.end sw_efi_wrap_7
++
++
++	.ent sw_efi_wrap_10
++sw_efi_wrap_10:
++	ldi $30,-96($30)
++        stl $26,32($30)
++        stl $15,40($30)
++        mov $30,$15
++        .prologue 1
++        stl $16,48($15)
++        stl $17,56($15)
++        stl $18,64($15)
++        stl $19,72($15)
++        stl $20,80($15)
++        stl $21,88($15)
++        ldl $1,104($15)
++        stl $1,0($30)
++        ldl $1,112($15)
++        stl $1,8($30)
++        ldl $1,120($15)
++        stl $1,16($30)
++        ldl $1,128($15)
++        stl $1,24($30)
++        ldl $27,48($15)
++        ldl $16,56($15)
++        ldl $17,64($15)
++        ldl $18,72($15)
++        ldl $19,80($15)
++        ldl $20,88($15)
++        ldl $21,96($15)
++        call $26,($27),0
++        #ldih $29,0($26)         !gpdisp!45
++        #ldi $29,0($29)          !gpdisp!45
++        mov $15,$30
++        ldl $26,32($30)
++        ldl $15,40($30)
++        ldi $30,96($30)
++        ret $31,($26),1
++
++	.end sw_efi_wrap_10
+diff --git a/grub-core/kern/sw64/efi/init.c b/grub-core/kern/sw64/efi/init.c
+new file mode 100644
+index 0000000..be55947
+--- /dev/null
++++ b/grub-core/kern/sw64/efi/init.c
+@@ -0,0 +1,85 @@
++/* init.c - initialize a sw64-based EFI system */
++/*
++ *  GRUB  --  GRand Unified Bootloader
++ *  Copyright (C) 2026 Free Software Foundation, Inc.
++ *
++ *  GRUB is free software: you can redistribute it and/or modify
++ *  it under the terms of the GNU General Public License as published by
++ *  the Free Software Foundation, either version 3 of the License, or
++ *  (at your option) any later version.
++ *
++ *  GRUB is distributed in the hope that it will be useful,
++ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
++ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ *  GNU General Public License for more details.
++ *
++ *  You should have received a copy of the GNU General Public License
++ *  along with GRUB.  If not, see <http://www.gnu.org/licenses/>.
++ */
++
++#include <grub/env.h>
++#include <grub/kernel.h>
++#include <grub/misc.h>
++#include <grub/mm.h>
++#include <grub/time.h>
++#include <grub/efi/efi.h>
++#include <grub/loader.h>
++
++static grub_uint64_t tmr;
++static grub_efi_event_t tmr_evt;
++
++static grub_uint64_t
++grub_efi_get_time_ms (void)
++{
++  return tmr;
++}
++
++static void
++increment_timer (grub_efi_event_t event __attribute__ ((unused)),
++                 void *context __attribute__ ((unused)))
++{
++  tmr += 10;
++}
++
++static void
++grub_print_info (void)
++{
++  grub_printf ("GNU %s %s\n", PACKAGE_NAME, PACKAGE_VERSION);
++  grub_printf ("Build Time: %s %s\n", __DATE__, __TIME__);
++}
++
++void
++grub_machine_init (void)
++{
++  grub_efi_boot_services_t *b;
++
++  grub_efi_init ();
++
++  b = grub_efi_system_table->boot_services;
++
++  efi_call_5 (b->create_event, GRUB_EFI_EVT_TIMER | GRUB_EFI_EVT_NOTIFY_SIGNAL,
++	      GRUB_EFI_TPL_CALLBACK, increment_timer, NULL, &tmr_evt);
++  efi_call_3 (b->set_timer, tmr_evt, GRUB_EFI_TIMER_PERIODIC, 100000);
++
++  grub_print_info ();
++  grub_install_get_time_ms (grub_efi_get_time_ms);
++}
++
++void
++grub_machine_fini (int flags)
++{
++  grub_efi_boot_services_t *b;
++
++  if (!(flags & GRUB_LOADER_FLAG_NORETURN))
++    return;
++
++  b = grub_efi_system_table->boot_services;
++
++  efi_call_3 (b->set_timer, tmr_evt, GRUB_EFI_TIMER_CANCEL, 0);
++  efi_call_1 (b->close_event, tmr_evt);
++
++  grub_efi_fini ();
++
++  if (!(flags & GRUB_LOADER_FLAG_EFI_KEEP_ALLOCATED_MEMORY))
++    grub_efi_memory_fini ();
++}
+diff --git a/grub-core/lib/sw64/divide.S b/grub-core/lib/sw64/divide.S
+new file mode 100644
+index 0000000..980aba6
+--- /dev/null
++++ b/grub-core/lib/sw64/divide.S
+@@ -0,0 +1,677 @@
++/*
++ * divide.S
++ *
++ * (C) 1995 Linus Torvalds
++ *
++ * Alpha division..
++ */
++
++/*
++ * The alpha chip doesn't provide hardware division, so we have to do it
++ * by hand.  The compiler expects the functions
++ *
++ *	__divqu: 64-bit unsigned long divide
++ *	__remqu: 64-bit unsigned long remainder
++ *	__divqs/__remqs: signed 64-bit
++ *	__divlu/__remlu: unsigned 32-bit
++ *	__divls/__remls: signed 32-bit
++ *
++ * These are not normal C functions: instead of the normal
++ * calling sequence, these expect their arguments in registers
++ * $24 and $25, and return the result in $27. Register $28 may
++ * be clobbered (assemembly temporary), anything else must be saved.
++ *
++ * In short: painful.
++ *
++ * This is a rather simple bit-at-a-time algorithm: it's very good
++ * at dividing random 64-bit numembers, but the more usual case where
++ * the divisor is small is handled better by the DEC algorithm
++ * using lookup tables. This uses much less memory, though, and is
++ * nicer on the cache.. Besides, I don't know the copyright status
++ * of the DEC code.
++ */
++
++/*
++ * My temporaries:
++ *	$0 - current bit
++ *	$1 - shifted divisor
++ *	$2 - modulus/quotient
++ *
++ *	$23 - return address
++ *	$24 - dividend
++ *	$25 - divisor
++ *
++ *	$27 - quotient/modulus
++ *	$28 - compare status
++ */
++
++#define halt .long 0
++
++/*
++ * Select function type and registers
++ */
++#define mask	$0
++#define divisor	$1
++#define compare $28
++#define tmp1	$3
++#define tmp2	$4
++
++#define DIV
++#define INTSIZE
++
++#undef DIV_ONLY
++#undef MOD_ONLY
++#undef func
++#undef modulus
++#undef quotient
++#undef GETSIGN
++#undef STACK
++#undef ufunction
++#undef sfunction
++#undef LONGIFY
++#undef SLONGIFY
++
++#ifdef DIV
++#define DIV_ONLY(x,y...) x,##y
++#define MOD_ONLY(x,y...)
++#define func(x) __div##x
++#define modulus $2
++#define quotient $27
++#define GETSIGN(x) xor $24,$25,x
++#define STACK 48
++#else
++#define DIV_ONLY(x,y...)
++#define MOD_ONLY(x,y...) x,##y
++#define func(x) __rem##x
++#define modulus $27
++#define quotient $2
++#define GETSIGN(x) bis $24,$24,x
++#define STACK 32
++#endif
++
++/*
++ * For 32-bit operations, we need to extend to 64-bit
++ */
++#ifdef INTSIZE
++#define ufunction func(wu)
++#define sfunction func(w)
++#define LONGIFY(x) zapnot x,15,x
++/* define SLONGIFY(x) addw x,0,x */
++#define SLONGIFY(x)
++#else
++#define ufunction func(lu)
++#define sfunction func(l)
++#define LONGIFY(x)
++#define SLONGIFY(x)
++#endif
++
++.set noat
++.align	3
++.globl	ufunction
++.ent	ufunction
++ufunction:
++	subl	$30,STACK,$30
++	.frame	$30,STACK,$23
++	.prologue 0
++
++7:	stl	$1, 0($30)
++	bis	$25,$25,divisor
++	stl	$2, 8($30)
++	bis	$24,$24,modulus
++	stl	$0,16($30)
++	bis	$31,$31,quotient
++	LONGIFY(divisor)
++	stl	tmp1,24($30)
++	LONGIFY(modulus)
++	bis	$31,1,mask
++	DIV_ONLY(stl tmp2,32($30))
++	beq	divisor, 9f			/* div by zero */
++
++#ifdef INTSIZE
++	/*
++	 * shift divisor left, using 3-bit shifts for
++	 * 32-bit divides as we can't overflow. Three-bit
++	 * shifts will result in looping three times less
++	 * here, but can result in two loops more later.
++	 * Thus using a large shift isn't worth it (and
++	 * s8add pairs better than a sll..)
++	 */
++1:	cmpult	divisor,modulus,compare
++	s8addl	divisor,$31,divisor
++	s8addl	mask,$31,mask
++	bne	compare,1b
++#else
++1:	cmpult	divisor,modulus,compare
++	blt     divisor, 2f
++	addl	divisor,divisor,divisor
++	addl	mask,mask,mask
++	bne	compare,1b
++	nop
++#endif
++
++	/* ok, start to go right again.. */
++2:	DIV_ONLY(addl quotient,mask,tmp2)
++	srl	mask,1,mask
++	cmpule	divisor,modulus,compare
++	subl	modulus,divisor,tmp1
++	DIV_ONLY(selne compare,tmp2,quotient,quotient)
++	srl	divisor,1,divisor
++	selne	compare,tmp1,modulus,modulus
++	bne	mask,2b
++
++9:	ldl	$1, 0($30)
++	ldl	$2, 8($30)
++	ldl	$0,16($30)
++	ldl	tmp1,24($30)
++	DIV_ONLY(ldl tmp2,32($30))
++	addl	$30,STACK,$30
++	ret	$31,($23),1
++	.end	ufunction
++
++/*
++ * Uhh.. Ugly signed division. I'd rather not have it at all, but
++ * it's needed in some circumstances. There are different ways to
++ * handle this, really. This does:
++ * 	-a / b = a / -b = -(a / b)
++ *	-a % b = -(a % b)
++ *	a % -b = a % b
++ * which is probably not the best solution, but at least should
++ * have the property that (x/y)*y + (x%y) = x.
++ */
++.align 3
++.globl	sfunction
++.ent	sfunction
++sfunction:
++	subl	$30,STACK,$30
++	.frame	$30,STACK,$23
++	.prologue 0
++	bis	$24,$25,$28
++	SLONGIFY($28)
++	bge	$28,7b
++	stl	$24,0($30)
++	subl	$31,$24,$28
++	stl	$25,8($30)
++	sellt	$24,$28,$24,$24	/* abs($24) */
++	stl	$23,16($30)
++	subl	$31,$25,$28
++	stl	tmp1,24($30)
++	sellt	$25,$28,$25,$25	/* abs($25) */
++	nop
++	bsr	$23,ufunction
++	ldl	$24,0($30)
++	ldl	$25,8($30)
++	GETSIGN($28)
++	subl	$31,$27,tmp1
++	SLONGIFY($28)
++	ldl	$23,16($30)
++	sellt	$28,tmp1,$27,$27
++	ldl	tmp1,24($30)
++	addl	$30,STACK,$30
++	ret	$31,($23),1
++	.end	sfunction
++
++/*rem  32 */
++
++#undef DIV_ONLY
++#undef MOD_ONLY
++#undef func
++#undef modulus
++#undef quotient
++#undef GETSIGN
++#undef STACK
++#undef ufunction
++#undef sfunction
++#undef LONGIFY
++#undef SLONGIFY
++
++
++#undef DIV
++
++
++#ifdef DIV
++#define DIV_ONLY(x,y...) x,##y
++#define MOD_ONLY(x,y...)
++#define func(x) __div##x
++#define modulus $2
++#define quotient $27
++#define GETSIGN(x) xor $24,$25,x
++#define STACK 48
++#else
++#define DIV_ONLY(x,y...)
++#define MOD_ONLY(x,y...) x,##y
++#define func(x) __rem##x
++#define modulus $27
++#define quotient $2
++#define GETSIGN(x) bis $24,$24,x
++#define STACK 32
++#endif
++
++/*
++ * For 32-bit operations, we need to extend to 64-bit
++ */
++#ifdef INTSIZE
++#define ufunction func(wu)
++#define sfunction func(w)
++#define LONGIFY(x) zapnot x,15,x
++#define SLONGIFY(x)
++#else
++#define ufunction func(lu)
++#define sfunction func(l)
++#define LONGIFY(x)
++#define SLONGIFY(x)
++#endif
++
++.align	3
++.globl	ufunction
++.ent	ufunction
++ufunction:
++	subl	$30,STACK,$30
++	.frame	$30,STACK,$23
++	.prologue 0
++
++7:	stl	$1, 0($30)
++	bis	$25,$25,divisor
++	stl	$2, 8($30)
++	bis	$24,$24,modulus
++	stl	$0,16($30)
++	bis	$31,$31,quotient
++	LONGIFY(divisor)
++	stl	tmp1,24($30)
++	LONGIFY(modulus)
++	bis	$31,1,mask
++	DIV_ONLY(stl tmp2,32($30))
++	beq	divisor, 9f			/* div by zero */
++
++#ifdef INTSIZE
++	/*
++	 * shift divisor left, using 3-bit shifts for
++	 * 32-bit divides as we can't overflow. Three-bit
++	 * shifts will result in looping three times less
++	 * here, but can result in two loops more later.
++	 * Thus using a large shift isn't worth it (and
++	 * s8add pairs better than a sll..)
++	 */
++1:	cmpult	divisor,modulus,compare
++	s8addl	divisor,$31,divisor
++	s8addl	mask,$31,mask
++	bne	compare,1b
++#else
++1:	cmpult	divisor,modulus,compare
++	blt     divisor, 2f
++	addl	divisor,divisor,divisor
++	addl	mask,mask,mask
++	bne	compare,1b
++	nop
++#endif
++
++	/* ok, start to go right again.. */
++2:	DIV_ONLY(addl quotient,mask,tmp2)
++	srl	mask,1,mask
++	cmpule	divisor,modulus,compare
++	subl	modulus,divisor,tmp1
++	DIV_ONLY(selne compare,tmp2,quotient,quotient)
++	srl	divisor,1,divisor
++	selne	compare,tmp1,modulus,modulus
++	bne	mask,2b
++
++9:	ldl	$1, 0($30)
++	ldl	$2, 8($30)
++	ldl	$0,16($30)
++	ldl	tmp1,24($30)
++	DIV_ONLY(ldl tmp2,32($30))
++	addl	$30,STACK,$30
++	ret	$31,($23),1
++	.end	ufunction
++
++/*
++ * Uhh.. Ugly signed division. I'd rather not have it at all, but
++ * it's needed in some circumstances. There are different ways to
++ * handle this, really. This does:
++ * 	-a / b = a / -b = -(a / b)
++ *	-a % b = -(a % b)
++ *	a % -b = a % b
++ * which is probably not the best solution, but at least should
++ * have the property that (x/y)*y + (x%y) = x.
++ */
++.align 3
++.globl	sfunction
++.ent	sfunction
++sfunction:
++	subl	$30,STACK,$30
++	.frame	$30,STACK,$23
++	.prologue 0
++	bis	$24,$25,$28
++	SLONGIFY($28)
++	bge	$28,7b
++	stl	$24,0($30)
++	subl	$31,$24,$28
++	stl	$25,8($30)
++	sellt	$24,$28,$24,$24	/* abs($24) */
++	stl	$23,16($30)
++	subl	$31,$25,$28
++	stl	tmp1,24($30)
++	sellt	$25,$28,$25,$25	/* abs($25) */
++	nop
++	bsr	$23,ufunction
++	ldl	$24,0($30)
++	ldl	$25,8($30)
++	GETSIGN($28)
++	subl	$31,$27,tmp1
++	SLONGIFY($28)
++	ldl	$23,16($30)
++	sellt	$28,tmp1,$27,$27
++	ldl	tmp1,24($30)
++	addl	$30,STACK,$30
++	ret	$31,($23),1
++	.end	sfunction
++
++/*div 64*/
++
++#undef DIV_ONLY
++#undef MOD_ONLY
++#undef func
++#undef modulus
++#undef quotient
++#undef GETSIGN
++#undef STACK
++#undef ufunction
++#undef sfunction
++#undef LONGIFY
++#undef SLONGIFY
++
++
++#define DIV
++#undef INTSIZE
++
++#ifdef DIV
++#define DIV_ONLY(x,y...) x,##y
++#define MOD_ONLY(x,y...)
++#define func(x) __div##x
++#define modulus $2
++#define quotient $27
++#define GETSIGN(x) xor $24,$25,x
++#define STACK 48
++#else
++#define DIV_ONLY(x,y...)
++#define MOD_ONLY(x,y...) x,##y
++#define func(x) __rem##x
++#define modulus $27
++#define quotient $2
++#define GETSIGN(x) bis $24,$24,x
++#define STACK 32
++#endif
++
++/*
++ * For 32-bit operations, we need to extend to 64-bit
++ */
++#ifdef INTSIZE
++#define ufunction func(wu)
++#define sfunction func(w)
++#define LONGIFY(x) zapnot x,15,x
++#define SLONGIFY(x)
++#else
++#define ufunction func(lu)
++#define sfunction func(l)
++#define LONGIFY(x)
++#define SLONGIFY(x)
++#endif
++
++.align	3
++.globl	ufunction
++.ent	ufunction
++ufunction:
++	subl	$30,STACK,$30
++	.frame	$30,STACK,$23
++	.prologue 0
++
++7:	stl	$1, 0($30)
++	bis	$25,$25,divisor
++	stl	$2, 8($30)
++	bis	$24,$24,modulus
++	stl	$0,16($30)
++	bis	$31,$31,quotient
++	LONGIFY(divisor)
++	stl	tmp1,24($30)
++	LONGIFY(modulus)
++	bis	$31,1,mask
++	DIV_ONLY(stl tmp2,32($30))
++	beq	divisor, 9f			/* div by zero */
++
++#ifdef INTSIZE
++	/*
++	 * shift divisor left, using 3-bit shifts for
++	 * 32-bit divides as we can't overflow. Three-bit
++	 * shifts will result in looping three times less
++	 * here, but can result in two loops more later.
++	 * Thus using a large shift isn't worth it (and
++	 * s8add pairs better than a sll..)
++	 */
++1:	cmpult	divisor,modulus,compare
++	s8addl	divisor,$31,divisor
++	s8addl	mask,$31,mask
++	bne	compare,1b
++#else
++1:	cmpult	divisor,modulus,compare
++	blt     divisor, 2f
++	addl	divisor,divisor,divisor
++	addl	mask,mask,mask
++	bne	compare,1b
++	nop
++#endif
++
++	/* ok, start to go right again.. */
++2:	DIV_ONLY(addl quotient,mask,tmp2)
++	srl	mask,1,mask
++	cmpule	divisor,modulus,compare
++	subl	modulus,divisor,tmp1
++	DIV_ONLY(selne compare,tmp2,quotient,quotient)
++	srl	divisor,1,divisor
++	selne	compare,tmp1,modulus,modulus
++	bne	mask,2b
++
++9:	ldl	$1, 0($30)
++	ldl	$2, 8($30)
++	ldl	$0,16($30)
++	ldl	tmp1,24($30)
++	DIV_ONLY(ldl tmp2,32($30))
++	addl	$30,STACK,$30
++	ret	$31,($23),1
++	.end	ufunction
++
++/*
++ * Uhh.. Ugly signed division. I'd rather not have it at all, but
++ * it's needed in some circumstances. There are different ways to
++ * handle this, really. This does:
++ * 	-a / b = a / -b = -(a / b)
++ *	-a % b = -(a % b)
++ *	a % -b = a % b
++ * which is probably not the best solution, but at least should
++ * have the property that (x/y)*y + (x%y) = x.
++ */
++.align 3
++.globl	sfunction
++.ent	sfunction
++sfunction:
++	subl	$30,STACK,$30
++	.frame	$30,STACK,$23
++	.prologue 0
++	bis	$24,$25,$28
++	SLONGIFY($28)
++	bge	$28,7b
++	stl	$24,0($30)
++	subl	$31,$24,$28
++	stl	$25,8($30)
++	sellt	$24,$28,$24,$24	/* abs($24) */
++	stl	$23,16($30)
++	subl	$31,$25,$28
++	stl	tmp1,24($30)
++	sellt	$25,$28,$25,$25	/* abs($25) */
++	nop
++	bsr	$23,ufunction
++	ldl	$24,0($30)
++	ldl	$25,8($30)
++	GETSIGN($28)
++	subl	$31,$27,tmp1
++	SLONGIFY($28)
++	ldl	$23,16($30)
++	sellt	$28,tmp1,$27,$27
++	ldl	tmp1,24($30)
++	addl	$30,STACK,$30
++	ret	$31,($23),1
++	.end	sfunction
++
++
++/*rem 64*/
++
++#undef DIV_ONLY
++#undef MOD_ONLY
++#undef func
++#undef modulus
++#undef quotient
++#undef GETSIGN
++#undef STACK
++#undef ufunction
++#undef sfunction
++#undef LONGIFY
++#undef SLONGIFY
++
++
++#undef DIV
++
++#ifdef DIV
++#define DIV_ONLY(x,y...) x,##y
++#define MOD_ONLY(x,y...)
++#define func(x) __div##x
++#define modulus $2
++#define quotient $27
++#define GETSIGN(x) xor $24,$25,x
++#define STACK 48
++#else
++#define DIV_ONLY(x,y...)
++#define MOD_ONLY(x,y...) x,##y
++#define func(x) __rem##x
++#define modulus $27
++#define quotient $2
++#define GETSIGN(x) bis $24,$24,x
++#define STACK 32
++#endif
++
++/*
++ * For 32-bit operations, we need to extend to 64-bit
++ */
++#ifdef INTSIZE
++#define ufunction func(wu)
++#define sfunction func(w)
++#define LONGIFY(x) zapnot x,15,x
++#define SLONGIFY(x)
++#else
++#define ufunction func(lu)
++#define sfunction func(l)
++#define LONGIFY(x)
++#define SLONGIFY(x)
++#endif
++
++
++.align	3
++.globl	ufunction
++.ent	ufunction
++ufunction:
++	subl	$30,STACK,$30
++	.frame	$30,STACK,$23
++	.prologue 0
++
++7:	stl	$1, 0($30)
++	bis	$25,$25,divisor
++	stl	$2, 8($30)
++	bis	$24,$24,modulus
++	stl	$0,16($30)
++	bis	$31,$31,quotient
++	LONGIFY(divisor)
++	stl	tmp1,24($30)
++	LONGIFY(modulus)
++	bis	$31,1,mask
++	DIV_ONLY(stl tmp2,32($30))
++	beq	divisor, 9f			/* div by zero */
++
++#ifdef INTSIZE
++	/*
++	 * shift divisor left, using 3-bit shifts for
++	 * 32-bit divides as we can't overflow. Three-bit
++	 * shifts will result in looping three times less
++	 * here, but can result in two loops more later.
++	 * Thus using a large shift isn't worth it (and
++	 * s8add pairs better than a sll..)
++	 */
++1:	cmpult	divisor,modulus,compare
++	s8addl	divisor,$31,divisor
++	s8addl	mask,$31,mask
++	bne	compare,1b
++#else
++1:	cmpult	divisor,modulus,compare
++	blt     divisor, 2f
++	addl	divisor,divisor,divisor
++	addl	mask,mask,mask
++	bne	compare,1b
++	nop
++#endif
++
++	/* ok, start to go right again.. */
++2:	DIV_ONLY(addl quotient,mask,tmp2)
++	srl	mask,1,mask
++	cmpule	divisor,modulus,compare
++	subl	modulus,divisor,tmp1
++	DIV_ONLY(selne compare,tmp2,quotient,quotient)
++	srl	divisor,1,divisor
++	selne	compare,tmp1,modulus,modulus
++	bne	mask,2b
++
++9:	ldl	$1, 0($30)
++	ldl	$2, 8($30)
++	ldl	$0,16($30)
++	ldl	tmp1,24($30)
++	DIV_ONLY(ldl tmp2,32($30))
++	addl	$30,STACK,$30
++	ret	$31,($23),1
++	.end	ufunction
++
++/*
++ * Uhh.. Ugly signed division. I'd rather not have it at all, but
++ * it's needed in some circumstances. There are different ways to
++ * handle this, really. This does:
++ * 	-a / b = a / -b = -(a / b)
++ *	-a % b = -(a % b)
++ *	a % -b = a % b
++ * which is probably not the best solution, but at least should
++ * have the property that (x/y)*y + (x%y) = x.
++ */
++.align 3
++.globl	sfunction
++.ent	sfunction
++sfunction:
++	subl	$30,STACK,$30
++	.frame	$30,STACK,$23
++	.prologue 0
++	bis	$24,$25,$28
++	SLONGIFY($28)
++	bge	$28,7b
++	stl	$24,0($30)
++	subl	$31,$24,$28
++	stl	$25,8($30)
++	sellt	$24,$28,$24,$24	/* abs($24) */
++	stl	$23,16($30)
++	subl	$31,$25,$28
++	stl	tmp1,24($30)
++	sellt	$25,$28,$25,$25	/* abs($25) */
++	nop
++	bsr	$23,ufunction
++	ldl	$24,0($30)
++	ldl	$25,8($30)
++	GETSIGN($28)
++	subl	$31,$27,tmp1
++	SLONGIFY($28)
++	ldl	$23,16($30)
++	sellt	$28,tmp1,$27,$27
++	ldl	tmp1,24($30)
++	addl	$30,STACK,$30
++	ret	$31,($23),1
++	.end	sfunction
+diff --git a/grub-core/lib/sw64/setjmp.S b/grub-core/lib/sw64/setjmp.S
+new file mode 100644
+index 0000000..926f5fc
+--- /dev/null
++++ b/grub-core/lib/sw64/setjmp.S
+@@ -0,0 +1,75 @@
++/*
++ *  GRUB  --  GRand Unified Bootloader
++ *  Copyright (C) 2026  Free Software Foundation, Inc.
++ *
++ *  GRUB is free software: you can redistribute it and/or modify
++ *  it under the terms of the GNU General Public License as published by
++ *  the Free Software Foundation, either version 3 of the License, or
++ *  (at your option) any later version.
++ *
++ *  GRUB is distributed in the hope that it will be useful,
++ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
++ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ *  GNU General Public License for more details.
++ *
++ *  You should have received a copy of the GNU General Public License
++ *  along with GRUB.  If not, see <http://www.gnu.org/licenses/>.
++ */
++
++#include <grub/symbol.h>
++#include <grub/dl.h>
++#include <grub/sw64/jmpbuf-offsets.h>
++#include <grub/sw64/regdef.h>
++
++       .file   "setjmp.S"
++
++GRUB_MOD_LICENSE "GPLv2+"
++
++FUNCTION(grub_setjmp)
++     ldgp    gp, 0(pv)
++#define FRAME  0
++     .frame  sp, FRAME, ra, 0
++
++     stl       s0, JB_S0*8(a0)
++     stl       s1, JB_S1*8(a0)
++     stl       s2, JB_S2*8(a0)
++     stl       s3, JB_S3*8(a0)
++     stl       s4, JB_S4*8(a0)
++     stl       s5, JB_S5*8(a0)
++     stl       ra, JB_PC*8(a0)
++     addl      sp, FRAME, t1
++     stl       t1, JB_SP*8(a0)
++     stl       fp, JB_FP*8(a0)
++     fstd      $f2, JB_F2*8(a0)
++     fstd      $f3, JB_F3*8(a0)
++     fstd      $f4, JB_F4*8(a0)
++     fstd      $f5, JB_F5*8(a0)
++     fstd      $f6, JB_F6*8(a0)
++     fstd      $f7, JB_F7*8(a0)
++     fstd      $f8, JB_F8*8(a0)
++     fstd      $f9, JB_F9*8(a0)
++     ldi       a0, 0($31)
++     ret
++
++FUNCTION(grub_longjmp)
++     mov       a1, v0
++     ldl       s0, JB_S0*8(a0)
++     ldl       s1, JB_S1*8(a0)
++     ldl       s2, JB_S2*8(a0)
++     ldl       s3, JB_S3*8(a0)
++     ldl       s4, JB_S4*8(a0)
++     ldl       s5, JB_S5*8(a0)
++     ldl       ra, JB_PC*8(a0)
++     ldl       fp, JB_FP*8(a0)
++     ldl       t0, JB_SP*8(a0)
++     fldd      $f2, JB_F2*8(a0)
++     fldd      $f3, JB_F3*8(a0)
++     fldd      $f4, JB_F4*8(a0)
++     fldd      $f5, JB_F5*8(a0)
++     fldd      $f6, JB_F6*8(a0)
++     fldd      $f7, JB_F7*8(a0)
++     fldd      $f8, JB_F8*8(a0)
++     fldd      $f9, JB_F9*8(a0)
++     seleq     v0, 1, v0, v0
++     mov       t0, sp
++     ret
+diff --git a/include/grub/efi/efi.h b/include/grub/efi/efi.h
+index a5cd99e..26f4735 100644
+--- a/include/grub/efi/efi.h
++++ b/include/grub/efi/efi.h
+@@ -122,7 +122,7 @@ extern void (*EXPORT_VAR(grub_efi_net_config)) (grub_efi_handle_t hnd,
+ void *
+ EXPORT_FUNC (grub_efi_find_configuration_table) (const grub_guid_t *target_guid);
+ 
+-#if defined(__arm__) || defined(__aarch64__) || defined(__riscv) || defined(__loongarch__)
++#if defined(__arm__) || defined(__aarch64__) || defined(__riscv) || defined(__loongarch__) || defined (__sw_64__)
+ void *EXPORT_FUNC(grub_efi_get_firmware_fdt)(void);
+ grub_err_t EXPORT_FUNC(grub_efi_get_ram_base)(grub_addr_t *);
+ #endif
+diff --git a/include/grub/sw64/divide.h b/include/grub/sw64/divide.h
+new file mode 100644
+index 0000000..a6c8eae
+--- /dev/null
++++ b/include/grub/sw64/divide.h
+@@ -0,0 +1,11 @@
++#ifndef __DIVIDE_H__
++#define __DIVIDE_H__
++void EXPORT_FUNC(__divw) (void);
++void EXPORT_FUNC(__remw) (void);
++void EXPORT_FUNC(__divl) (void);
++void EXPORT_FUNC(__reml) (void);
++void EXPORT_FUNC(__divwu) (void);
++void EXPORT_FUNC(__remwu) (void);
++void EXPORT_FUNC(__divlu) (void);
++void EXPORT_FUNC(__remlu) (void);
++#endif
+diff --git a/include/grub/sw64/efi/memory.h b/include/grub/sw64/efi/memory.h
+new file mode 100644
+index 0000000..b869f46
+--- /dev/null
++++ b/include/grub/sw64/efi/memory.h
+@@ -0,0 +1,7 @@
++#ifndef GRUB_MEMORY_CPU_HEADER
++#include <grub/efi/memory.h>
++
++#define GRUB_EFI_MAX_USABLE_ADDRESS 0xFFF000003FFFFFFFULL
++#define GRUB_EFI_MAX_ALLOCATION_ADDRESS GRUB_EFI_MAX_USABLE_ADDRESS
++
++#endif /* ! GRUB_MEMORY_CPU_HEADER */
+diff --git a/include/grub/sw64/efi/time.h b/include/grub/sw64/efi/time.h
+new file mode 100644
+index 0000000..b90bcb4
+--- /dev/null
++++ b/include/grub/sw64/efi/time.h
+@@ -0,0 +1,23 @@
++/*
++ *  GRUB  --  GRand Unified Bootloader
++ *  Copyright (C) 2026  Free Software Foundation, Inc.
++ *
++ *  GRUB is free software: you can redistribute it and/or modify
++ *  it under the terms of the GNU General Public License as published by
++ *  the Free Software Foundation, either version 3 of the License, or
++ *  (at your option) any later version.
++ *
++ *  GRUB is distributed in the hope that it will be useful,
++ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
++ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ *  GNU General Public License for more details.
++ *
++ *  You should have received a copy of the GNU General Public License
++ *  along with GRUB.  If not, see <http://www.gnu.org/licenses/>.
++ */
++#ifndef GRUB_MACHINE_TIME_HEADER
++#define GRUB_MACHINE_TIME_HEADER	1
++
++#include <grub/efi/time.h>
++
++#endif /* ! GRUB_MACHINE_TIME_HEADER */
+diff --git a/include/grub/sw64/io.h b/include/grub/sw64/io.h
+new file mode 100644
+index 0000000..851eff5
+--- /dev/null
++++ b/include/grub/sw64/io.h
+@@ -0,0 +1,62 @@
++/*
++ *  GRUB  --  GRand Unified Bootloader
++ *  Copyright (C) 2026  Free Software Foundation, Inc.
++ *
++ *  GRUB is free software: you can redistribute it and/or modify
++ *  it under the terms of the GNU General Public License as published by
++ *  the Free Software Foundation, either version 3 of the License, or
++ *  (at your option) any later version.
++ *
++ *  GRUB is distributed in the hope that it will be useful,
++ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
++ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ *  GNU General Public License for more details.
++ *
++ *  You should have received a copy of the GNU General Public License
++ *  along with GRUB.  If not, see <http://www.gnu.org/licenses/>.
++ */
++
++#ifndef	GRUB_IO_H
++#define	GRUB_IO_H	1
++
++#include <grub/types.h>
++
++typedef grub_addr_t grub_port_t;
++
++static __inline unsigned char
++grub_inb (grub_port_t port)
++{
++  return *(volatile grub_uint8_t *) port;
++}
++
++static __inline unsigned short int
++grub_inw (grub_port_t port)
++{
++  return *(volatile grub_uint16_t *) port;
++}
++
++static __inline unsigned int
++grub_inl (grub_port_t port)
++{
++  return *(volatile grub_uint32_t *) port;
++}
++
++static __inline void
++grub_outb (unsigned char value, grub_port_t port)
++{
++  *(volatile grub_uint8_t *) port = value;
++}
++
++static __inline void
++grub_outw (unsigned short int value, grub_port_t port)
++{
++  *(volatile grub_uint16_t *) port = value;
++}
++
++static __inline void
++grub_outl (unsigned int value, grub_port_t port)
++{
++  *(volatile grub_uint32_t *) port = value;
++}
++
++#endif /* _SYS_IO_H */
+diff --git a/include/grub/sw64/jmpbuf-offsets.h b/include/grub/sw64/jmpbuf-offsets.h
+new file mode 100644
+index 0000000..7ab64a2
+--- /dev/null
++++ b/include/grub/sw64/jmpbuf-offsets.h
+@@ -0,0 +1,35 @@
++/* Private macros for accessing __jmp_buf contents.  Alpha version.
++   Copyright (C) 2006-2026 Free Software Foundation, Inc.
++   This file is part of the GNU C Library.
++
++   The GNU C Library is free software; you can redistribute it and/or
++   modify it under the terms of the GNU Lesser General Public
++   License as published by the Free Software Foundation; either
++   version 2.1 of the License, or (at your option) any later version.
++
++   The GNU C Library is distributed in the hope that it will be useful,
++   but WITHOUT ANY WARRANTY; without even the implied warranty of
++   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
++   Lesser General Public License for more details.
++
++   You should have received a copy of the GNU Lesser General Public
++   License along with the GNU C Library.  If not, see
++   <http://www.gnu.org/licenses/>.  */
++
++#define JB_S0  0
++#define JB_S1  1
++#define JB_S2  2
++#define JB_S3  3
++#define JB_S4  4
++#define JB_S5  5
++#define JB_PC  6
++#define JB_FP  7
++#define JB_SP  8
++#define JB_F2  9
++#define JB_F3  10
++#define JB_F4  11
++#define JB_F5  12
++#define JB_F6  13
++#define JB_F7  14
++#define JB_F8  15
++#define JB_F9  16
+diff --git a/include/grub/sw64/kernel.h b/include/grub/sw64/kernel.h
+new file mode 100644
+index 0000000..237d920
+--- /dev/null
++++ b/include/grub/sw64/kernel.h
+@@ -0,0 +1,25 @@
++/*
++ *  GRUB  --  GRand Unified Bootloader
++ *  Copyright (C) 2026  Free Software Foundation, Inc.
++ *
++ *  GRUB is free software: you can redistribute it and/or modify
++ *  it under the terms of the GNU General Public License as published by
++ *  the Free Software Foundation, either version 3 of the License, or
++ *  (at your option) any later version.
++ *
++ *  GRUB is distributed in the hope that it will be useful,
++ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
++ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ *  GNU General Public License for more details.
++ *
++ *  You should have received a copy of the GNU General Public License
++ *  along with GRUB.  If not, see <http://www.gnu.org/licenses/>.
++ */
++
++#ifndef GRUB_CPU_KERNEL_HEADER
++#define GRUB_CPU_KERNEL_HEADER   1
++
++#define GRUB_MOD_ALIGN	0x1
++#define GRUB_MOD_GAP	0x0
++
++#endif /* ! GRUB_CPU_KERNEL_HEADER */
+diff --git a/include/grub/sw64/regdef.h b/include/grub/sw64/regdef.h
+new file mode 100644
+index 0000000..b30eb77
+--- /dev/null
++++ b/include/grub/sw64/regdef.h
+@@ -0,0 +1,44 @@
++#ifndef __sw_regdef_h__
++#define __sw_regdef_h__
++
++#define v0	$0	/* function return value */
++
++#define t0	$1	/* temporary registers (caller-saved) */
++#define t1	$2
++#define t2	$3
++#define t3	$4
++#define t4	$5
++#define t5	$6
++#define t6	$7
++#define t7	$8
++
++#define	s0	$9	/* saved-registers (callee-saved registers) */
++#define	s1	$10
++#define	s2	$11
++#define	s3	$12
++#define	s4	$13
++#define	s5	$14
++#define	s6	$15
++#define	fp	s6	/* frame-pointer (s6 in frame-less procedures) */
++
++#define a0	$16	/* argument registers (caller-saved) */
++#define a1	$17
++#define a2	$18
++#define a3	$19
++#define a4	$20
++#define a5	$21
++
++#define t8	$22	/* more temps (caller-saved) */
++#define t9	$23
++#define t10	$24
++#define t11	$25
++#define ra	$26	/* return address register */
++#define t12	$27
++
++#define pv	t12	/* procedure-variable register */
++#define AT	$at	/* assembler temporary */
++#define gp	$29	/* global pointer */
++#define sp	$30	/* stack pointer */
++#define zero	$31	/* reads as zero, writes are noops */
++
++#endif /* __sw_64_regdef_h__ */
+diff --git a/include/grub/sw64/setjmp.h b/include/grub/sw64/setjmp.h
+new file mode 100644
+index 0000000..956690d
+--- /dev/null
++++ b/include/grub/sw64/setjmp.h
+@@ -0,0 +1,27 @@
++/* Define the machine-dependent type `jmp_buf'.  Linux/SW64 version.
++   Copyright (C) 1999, 2000, 2008, 2026  Free Software Foundation, Inc.
++
++   The GNU C Library is free software; you can redistribute it and/or
++   modify it under the terms of the GNU Library General Public License as
++   published by the Free Software Foundation; either version 2 of the
++   License, or (at your option) any later version.
++
++   The GNU C Library is distributed in the hope that it will be useful,
++   but WITHOUT ANY WARRANTY; without even the implied warranty of
++   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
++   Library General Public License for more details.
++
++   You should have received a copy of the GNU Library General Public
++   License along with the GNU C Library; see the file COPYING.LIB.  If not,
++   write to the Free Software Foundation, Inc., 59 Temple Place - Suite 330,
++   Boston, MA 02111-1307, USA.  */
++
++/* User code must not depend on the internal representation of jmp_buf. */
++
++#define _JBLEN	70
++
++/* the __jmp_buf element type should be __float80 per ABI... */
++typedef long grub_jmp_buf[_JBLEN] __attribute__ ((aligned (16))); /* guarantees 128-bit alignment! */
++
++int grub_setjmp (grub_jmp_buf env);
++void grub_longjmp (grub_jmp_buf env, int val) __attribute__ ((noreturn));
+diff --git a/include/grub/sw64/time.h b/include/grub/sw64/time.h
+new file mode 100644
+index 0000000..fc866fe
+--- /dev/null
++++ b/include/grub/sw64/time.h
+@@ -0,0 +1,28 @@
++/*
++ *  GRUB  --  GRand Unified Bootloader
++ *  Copyright (C) 2007, 2008, 2026  Free Software Foundation, Inc.
++ *
++ *  GRUB is free software: you can redistribute it and/or modify
++ *  it under the terms of the GNU General Public License as published by
++ *  the Free Software Foundation, either version 3 of the License, or
++ *  (at your option) any later version.
++ *
++ *  GRUB is distributed in the hope that it will be useful,
++ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
++ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ *  GNU General Public License for more details.
++ *
++ *  You should have received a copy of the GNU General Public License
++ *  along with GRUB.  If not, see <http://www.gnu.org/licenses/>.
++ */
++
++#ifndef KERNEL_CPU_TIME_HEADER
++#define KERNEL_CPU_TIME_HEADER	1
++
++static __inline void
++grub_cpu_idle (void)
++{
++  /* FIXME: not implemented */
++}
++
++#endif /* ! KERNEL_CPU_TIME_HEADER */
+diff --git a/include/grub/sw64/types.h b/include/grub/sw64/types.h
+new file mode 100644
+index 0000000..78b2136
+--- /dev/null
++++ b/include/grub/sw64/types.h
+@@ -0,0 +1,32 @@
++/*
++ *  GRUB  --  GRand Unified Bootloader
++ *  Copyright (C) 2026  Free Software Foundation, Inc.
++ *
++ *  GRUB is free software: you can redistribute it and/or modify
++ *  it under the terms of the GNU General Public License as published by
++ *  the Free Software Foundation, either version 3 of the License, or
++ *  (at your option) any later version.
++ *
++ *  GRUB is distributed in the hope that it will be useful,
++ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
++ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ *  GNU General Public License for more details.
++ *
++ *  You should have received a copy of the GNU General Public License
++ *  along with GRUB.  If not, see <http://www.gnu.org/licenses/>.
++ */
++
++#ifndef GRUB_TYPES_CPU_HEADER
++#define GRUB_TYPES_CPU_HEADER	1
++
++/* The size of void *.  */
++#define GRUB_TARGET_SIZEOF_VOID_P	8
++
++/* The size of long.  */
++#define GRUB_TARGET_SIZEOF_LONG		8
++
++/* sw64 is little-endian (usually).  */
++#undef GRUB_TARGET_WORDS_BIGENDIAN
++
++
++#endif /* ! GRUB_TYPES_CPU_HEADER */
+-- 
+2.20.1
+

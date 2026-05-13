@@ -1,0 +1,514 @@
+From edf244802c21a42e46d1c1280892a31094d15a87 Mon Sep 17 00:00:00 2001
+From: sunway_fw <sunway_fw@wxiat.com>
+Date: Thu, 14 May 2026 15:33:57 +0800
+Subject: [PATCH] sw64: Add to build system
+
+This patch adds SW64 to the GRUB build system and various tools, so GRUB
+can be built on SW64 as a UEFI application.
+
+Signed-off-by: sunway_fw <sunway_fw@wxiat.com>
+---
+ Makefile.util.def            |  1 +
+ conf/Makefile.common         |  3 +++
+ configure.ac                 |  4 ++++
+ gentpl.py                    |  7 ++++---
+ grub-core/Makefile.am        |  7 +++++++
+ grub-core/Makefile.core.def  | 20 ++++++++++++++++++++
+ grub-core/commands/file.c    | 11 ++++++++++-
+ grub-core/kern/compiler-rt.c |  2 +-
+ grub-core/lib/setjmp.S       |  2 ++
+ include/grub/compiler-rt.h   |  2 +-
+ include/grub/efi/pe32.h      |  1 +
+ include/grub/util/install.h  |  1 +
+ util/grub-install-common.c   |  1 +
+ util/grub-install.c          | 13 +++++++++++++
+ util/grub-mknetdir.c         |  1 +
+ util/grub-mkrescue.c         | 10 ++++++++--
+ util/mkimage.c               | 16 ++++++++++++++++
+ 17 files changed, 94 insertions(+), 8 deletions(-)
+
+diff --git a/Makefile.util.def b/Makefile.util.def
+index e82e89c..88f80a7 100644
+--- a/Makefile.util.def
++++ b/Makefile.util.def
+@@ -164,6 +164,7 @@ library = {
+   common = grub-core/kern/arm/dl_helper.c;
+   common = grub-core/kern/arm64/dl_helper.c;
+   common = grub-core/kern/loongarch64/dl_helper.c;
++  common = grub-core/kern/sw64/dl_helper.c;
+   common = grub-core/lib/minilzo/minilzo.c;
+   common = grub-core/lib/xzembed/xz_dec_bcj.c;
+   common = grub-core/lib/xzembed/xz_dec_lzma2.c;
+diff --git a/conf/Makefile.common b/conf/Makefile.common
+index b8f216f..f3ab6b9 100644
+--- a/conf/Makefile.common
++++ b/conf/Makefile.common
+@@ -23,6 +23,9 @@ endif
+ if COND_HAVE_PCI
+   CFLAGS_PLATFORM += -DGRUB_HAS_PCI
+ endif
++if COND_sw_64_efi
++  CFLAGS_PLATFORM += -Wno-packed-not-aligned -Wno-cast-align -Wno-sign-compare
++endif
+ 
+ # Other options
+ 
+diff --git a/configure.ac b/configure.ac
+index 0cc2b96..672382a 100644
+--- a/configure.ac
++++ b/configure.ac
+@@ -126,6 +126,7 @@ case "$target_cpu" in
+   loongarch64)	target_cpu=loongarch64 ;;
+   riscv32*)	target_cpu=riscv32 ;;
+   riscv64*)	target_cpu=riscv64 ;;
++  sw_64*)       target_cpu=sw64;;
+ esac
+ 
+ # Specify the platform (such as firmware).
+@@ -153,6 +154,7 @@ if test "x$with_platform" = x; then
+     loongarch64-*) platform=efi;;
+     riscv32-*) platform=efi ;;
+     riscv64-*) platform=efi ;;
++    sw64-*) platform=efi ;;
+     *)
+       AC_MSG_WARN([unsupported CPU: "$target_cpu" - only building utilities])
+       platform=none
+@@ -205,6 +207,7 @@ case "$target_cpu"-"$platform" in
+   loongarch64-efi) ;;
+   riscv32-efi) ;;
+   riscv64-efi) ;;
++  sw64-efi) ;;
+   *-emu) ;;
+   *-none) ;;
+   *) AC_MSG_ERROR([platform "$platform" is not supported for target CPU "$target_cpu"]) ;;
+@@ -2234,6 +2237,7 @@ AM_CONDITIONAL([COND_riscv32], [test x$target_cpu = xriscv32 ])
+ AM_CONDITIONAL([COND_riscv64], [test x$target_cpu = xriscv64 ])
+ AM_CONDITIONAL([COND_riscv32_efi], [test x$target_cpu = xriscv32 -a x$platform = xefi])
+ AM_CONDITIONAL([COND_riscv64_efi], [test x$target_cpu = xriscv64 -a x$platform = xefi])
++AM_CONDITIONAL([COND_sw_64_efi], [test x$target_cpu = xsw64 -a x$platform = xefi])
+ AM_CONDITIONAL([COND_sparc64_ieee1275], [test x$target_cpu = xsparc64 -a x$platform = xieee1275])
+ AM_CONDITIONAL([COND_sparc64_emu], [test x$target_cpu = xsparc64 -a x$platform = xemu])
+ AM_CONDITIONAL([COND_x86_64_efi], [test x$target_cpu = xx86_64 -a x$platform = xefi])
+diff --git a/gentpl.py b/gentpl.py
+index 3a19687..08dd41c 100644
+--- a/gentpl.py
++++ b/gentpl.py
+@@ -32,7 +32,7 @@ GRUB_PLATFORMS = [ "emu", "i386_pc", "i386_efi", "i386_qemu", "i386_coreboot",
+                    "mips_loongson", "mips64_efi", "sparc64_ieee1275",
+                    "powerpc_ieee1275", "mips_arc", "ia64_efi",
+                    "mips_qemu_mips", "arm_uboot", "arm_efi", "arm64_efi",
+-                   "arm_coreboot", "loongarch64_efi", "riscv32_efi", "riscv64_efi" ]
++                   "arm_coreboot", "loongarch64_efi", "riscv32_efi", "riscv64_efi", "sw_64_efi" ]
+ 
+ GROUPS = {}
+ 
+@@ -51,10 +51,11 @@ GROUPS["arm64"]       = [ "arm64_efi" ]
+ GROUPS["loongarch64"] = [ "loongarch64_efi" ]
+ GROUPS["riscv32"]     = [ "riscv32_efi" ]
+ GROUPS["riscv64"]     = [ "riscv64_efi" ]
++GROUPS["sw_64"]       = [ "sw_64_efi" ]
+ 
+ # Groups based on firmware
+ GROUPS["efi"]  = [ "i386_efi", "x86_64_efi", "ia64_efi", "arm_efi", "arm64_efi", "mips64_efi",
+-		   "loongarch64_efi", "riscv32_efi", "riscv64_efi" ]
++		   "loongarch64_efi", "riscv32_efi", "riscv64_efi", "sw_64_efi" ]
+ GROUPS["ieee1275"]   = [ "i386_ieee1275", "sparc64_ieee1275", "powerpc_ieee1275" ]
+ GROUPS["uboot"] = [ "arm_uboot" ]
+ GROUPS["xen"]  = [ "i386_xen", "x86_64_xen" ]
+@@ -81,7 +82,7 @@ GROUPS["terminfomodule"]   = GRUB_PLATFORMS[:];
+ for i in GROUPS["terminfoinkernel"]: GROUPS["terminfomodule"].remove(i)
+ 
+ # Flattened Device Trees (FDT)
+-GROUPS["fdt"] = [ "arm64_efi", "arm_uboot", "arm_efi", "loongarch64_efi", "riscv32_efi", "riscv64_efi" ]
++GROUPS["fdt"] = [ "arm64_efi", "arm_uboot", "arm_efi", "loongarch64_efi", "riscv32_efi", "riscv64_efi", "sw_64_efi" ]
+ 
+ # Needs software helpers for division
+ # Must match GRUB_DIVISION_IN_SOFTWARE in misc.h
+diff --git a/grub-core/Makefile.am b/grub-core/Makefile.am
+index 3966a0f..120afaa 100644
+--- a/grub-core/Makefile.am
++++ b/grub-core/Makefile.am
+@@ -317,6 +317,13 @@ KERNEL_HEADER_FILES += $(top_srcdir)/include/grub/efi/disk.h
+ KERNEL_HEADER_FILES += $(top_srcdir)/include/grub/acpi.h
+ endif
+ 
++if COND_sw_64_efi
++KERNEL_HEADER_FILES += $(top_srcdir)/include/grub/efi/efi.h
++KERNEL_HEADER_FILES += $(top_srcdir)/include/grub/efi/disk.h
++KERNEL_HEADER_FILES += $(top_srcdir)/include/grub/sw64/divide.h
++KERNEL_HEADER_FILES += $(top_srcdir)/include/grub/acpi.h
++endif
++
+ if COND_emu
+ KERNEL_HEADER_FILES += $(top_srcdir)/include/grub/datetime.h
+ KERNEL_HEADER_FILES += $(top_srcdir)/include/grub/emu/misc.h
+diff --git a/grub-core/Makefile.core.def b/grub-core/Makefile.core.def
+index 393ccde..ac1b980 100644
+--- a/grub-core/Makefile.core.def
++++ b/grub-core/Makefile.core.def
+@@ -103,6 +103,8 @@ kernel = {
+   sparc64_ieee1275_ldflags = '-Wl,-Ttext,0x4400';
+   mips_arc_ldflags    = '-Wl,-Ttext,$(TARGET_LINK_ADDR)';
+   mips_qemu_mips_ldflags    = '-Wl,-Ttext,0x80200000';
++  sw_64_efi_ldflags = '-Wl,-r,-d';
++  sw_64_efi_stripflags = '--strip-unneeded -K start -R .note -R .comment -R .note.gnu.gold-version';
+ 
+   mips_arc_cppflags = '-DGRUB_DECOMPRESSOR_LINK_ADDR=$(TARGET_DECOMPRESSOR_LINK_ADDR)';
+   i386_qemu_cppflags     = '-DGRUB_BOOT_MACHINE_LINK_ADDR=$(GRUB_BOOT_MACHINE_LINK_ADDR)';
+@@ -137,6 +139,7 @@ kernel = {
+   loongarch64_efi_startup = kern/loongarch64/efi/startup.S;
+   riscv32_efi_startup = kern/riscv/efi/startup.S;
+   riscv64_efi_startup = kern/riscv/efi/startup.S;
++  sw_64_efi_startup = kern/sw64/efi/startup.S;
+ 
+   common = kern/buffer.c;
+   common = kern/command.c;
+@@ -341,6 +344,16 @@ kernel = {
+   mips64_efi = lib/mips64/efi/loongson.c;
+   mips64_efi = lib/mips64/efi/loongson_asm.S;
+ 
++  sw_64_efi = kern/sw64/dl.c;
++  sw_64_efi = kern/sw64/dl_helper.c;
++  sw_64_efi = kern/sw64/efi/init.c;
++  sw_64_efi = kern/efi/fdt.c;
++  sw_64_efi = lib/sw64/divide.S;
++  sw_64_efi = kern/sw64/efi/callwrap.S;
++  sw_64_efi = kern/sw64/cache.c;
++  sw_64_efi = kern/sw64/cache_flush.S;
++  sw_64_efi = commands/keylayouts.c;
++
+   powerpc_ieee1275 = kern/powerpc/cache.S;
+   powerpc_ieee1275 = kern/powerpc/dl.c;
+   powerpc_ieee1275 = kern/powerpc/compiler-rt.S;
+@@ -885,6 +898,7 @@ module = {
+   enable = loongarch64_efi;
+   enable = riscv32_efi;
+   enable = riscv64_efi;
++  enable = sw_64_efi;
+ };
+ 
+ module = {
+@@ -962,6 +976,7 @@ module = {
+   i386_multiboot = commands/acpihalt.c;
+   i386_efi = commands/acpihalt.c;
+   x86_64_efi = commands/acpihalt.c;
++  sw_64_efi = commands/acpihalt.c;
+   i386_multiboot = lib/i386/halt.c;
+   i386_coreboot = lib/i386/halt.c;
+   i386_qemu = lib/i386/halt.c;
+@@ -1799,6 +1814,8 @@ module = {
+   extra_dist = lib/arm64/setjmp.S;
+   extra_dist = lib/riscv/setjmp.S;
+   extra_dist = lib/loongarch64/setjmp.S;
++  extra_dist = lib/sw64/setjmp.S;
++  extra_dist = lib/sw64/divide.S;
+ };
+ 
+ module = {
+@@ -1904,6 +1921,7 @@ module = {
+   loongarch64 = loader/efi/linux.c;
+   riscv32 = loader/efi/linux.c;
+   riscv64 = loader/efi/linux.c;
++  sw_64_efi = loader/sw64/efi/linux.c;
+   i386_efi = loader/efi/linux.c;
+   x86_64_efi = loader/efi/linux.c;
+   emu = loader/emu/linux.c;
+@@ -1921,6 +1939,7 @@ module = {
+   enable = riscv32_efi;
+   enable = riscv64_efi;
+   enable = loongarch64_efi;
++  enable = sw_64;
+ };
+ 
+ 
+@@ -2018,6 +2037,7 @@ module = {
+   enable = riscv64_efi;
+   enable = mips;
+   enable = mips64_efi;
++  enable = sw_64_efi;
+ };
+ 
+ module = {
+diff --git a/grub-core/commands/file.c b/grub-core/commands/file.c
+index 7c13e97..fd073f4 100644
+--- a/grub-core/commands/file.c
++++ b/grub-core/commands/file.c
+@@ -94,6 +94,8 @@ static const struct grub_arg_option options[] = {
+    N_("Check if FILE is RISC-V 32bit EFI file"), 0, 0},
+   {"is-riscv64-efi", 0, 0,
+    N_("Check if FILE is RISC-V 64bit EFI file"), 0, 0},
++  {"is-sw64-efi", 0, 0,
++   N_("Check if FILE is SW64 EFI file"), 0, 0},
+   {"is-hibernated-hiberfil", 0, 0,
+    N_("Check if FILE is hiberfil.sys in hibernated state"), 0, 0},
+   {"is-x86_64-xnu", 0, 0,
+@@ -136,6 +138,7 @@ enum
+   IS_ARM_EFI,
+   IS_RISCV32_EFI,
+   IS_RISCV64_EFI,
++  IS_SW64_EFI,
+   IS_HIBERNATED,
+   IS_XNU64,
+   IS_XNU32,
+@@ -590,6 +593,7 @@ grub_cmd_file (grub_extcmd_context_t ctxt, int argc, char **args)
+     case IS_ARM_EFI:
+     case IS_RISCV32_EFI:
+     case IS_RISCV64_EFI:
++    case IS_SW64_EFI:
+       {
+ 	char signature[4];
+ 	grub_uint32_t pe_offset;
+@@ -640,8 +644,13 @@ grub_cmd_file (grub_extcmd_context_t ctxt, int argc, char **args)
+ 	    grub_cpu_to_le16_compile_time (GRUB_PE32_MACHINE_RISCV64))
+           /* TODO: Determine bitness dynamically */
+ 	  break;
++        if (type == IS_SW64_EFI
++            && coff_head.machine !=
++            grub_cpu_to_le16_compile_time (GRUB_PE32_MACHINE_SW_64))
++          /* TODO: Determine bitness dynamically */
++	  break;
+ 	if (type == IS_IA_EFI || type == IS_64_EFI || type == IS_ARM64_EFI ||
+-	    type == IS_RISCV32_EFI || type == IS_RISCV64_EFI)
++	    type == IS_RISCV32_EFI || type == IS_RISCV64_EFI || type == IS_SW64_EFI)
+ 	  {
+ 	    struct grub_pe64_optional_header o64;
+ 	    if (grub_file_read (file, &o64, sizeof (o64)) != sizeof (o64))
+diff --git a/grub-core/kern/compiler-rt.c b/grub-core/kern/compiler-rt.c
+index eda689a..5dbada2 100644
+--- a/grub-core/kern/compiler-rt.c
++++ b/grub-core/kern/compiler-rt.c
+@@ -335,7 +335,7 @@ __ucmpdi2 (grub_uint64_t a, grub_uint64_t b)
+ #endif
+ 
+ #if defined (__powerpc__) || defined(__mips__) || defined(__sparc__) || \
+-    defined(__arm__) || defined(__riscv)
++    defined(__arm__) || defined(__riscv) || defined(__sw_64__)
+ 
+ /* Based on libgcc2.c from gcc suite.  */
+ grub_uint32_t
+diff --git a/grub-core/lib/setjmp.S b/grub-core/lib/setjmp.S
+index c213cc1..8bfb70e 100644
+--- a/grub-core/lib/setjmp.S
++++ b/grub-core/lib/setjmp.S
+@@ -27,6 +27,8 @@
+ #include "./loongarch64/setjmp.S"
+ #elif defined(__riscv)
+ #include "./riscv/setjmp.S"
++#elif defined(__sw_64__)
++#include "./sw64/setjmp.S"
+ #else
+ #error "Unknown target cpu type"
+ #endif
+diff --git a/include/grub/compiler-rt.h b/include/grub/compiler-rt.h
+index 17828b3..a8782fc 100644
+--- a/include/grub/compiler-rt.h
++++ b/include/grub/compiler-rt.h
+@@ -178,7 +178,7 @@ EXPORT_FUNC (__lshrdi3) (grub_uint64_t u, int b);
+ #endif
+ 
+ #if defined (__powerpc__) || defined(__mips__) || defined(__sparc__) || \
+-    defined (__arm__) || defined(__riscv)
++    defined (__arm__) || defined(__riscv) || defined(__sw_64__)
+ grub_uint32_t
+ EXPORT_FUNC(__bswapsi2) (grub_uint32_t u);
+ 
+diff --git a/include/grub/efi/pe32.h b/include/grub/efi/pe32.h
+index 5609d9b..40a1c48 100644
+--- a/include/grub/efi/pe32.h
++++ b/include/grub/efi/pe32.h
+@@ -93,6 +93,7 @@ struct grub_pe32_coff_header
+ #define GRUB_PE32_MACHINE_LOONGARCH64		0x6264
+ #define GRUB_PE32_MACHINE_RISCV32		0x5032
+ #define GRUB_PE32_MACHINE_RISCV64		0x5064
++#define GRUB_PE32_MACHINE_SW_64                 0x0284
+ 
+ #define GRUB_PE32_RELOCS_STRIPPED		0x0001
+ #define GRUB_PE32_EXECUTABLE_IMAGE		0x0002
+diff --git a/include/grub/util/install.h b/include/grub/util/install.h
+index 58424c5..d8501ed 100644
+--- a/include/grub/util/install.h
++++ b/include/grub/util/install.h
+@@ -110,6 +110,7 @@ enum grub_install_plat
+     GRUB_INSTALL_PLATFORM_LOONGARCH64_EFI,
+     GRUB_INSTALL_PLATFORM_RISCV32_EFI,
+     GRUB_INSTALL_PLATFORM_RISCV64_EFI,
++    GRUB_INSTALL_PLATFORM_SW64_EFI,
+     GRUB_INSTALL_PLATFORM_MIPS64EL_EFI,
+     GRUB_INSTALL_PLATFORM_MAX
+   };
+diff --git a/util/grub-install-common.c b/util/grub-install-common.c
+index 365e494..2045eb6 100644
+--- a/util/grub-install-common.c
++++ b/util/grub-install-common.c
+@@ -953,6 +953,7 @@ static struct
+     [GRUB_INSTALL_PLATFORM_LOONGARCH64_EFI] =  { "loongarch64", "efi"       },
+     [GRUB_INSTALL_PLATFORM_RISCV32_EFI] =      { "riscv32",     "efi"       },
+     [GRUB_INSTALL_PLATFORM_RISCV64_EFI] =      { "riscv64",     "efi"       },
++    [GRUB_INSTALL_PLATFORM_SW64_EFI] =         { "sw64",        "efi"       },
+   };
+ 
+ char *
+diff --git a/util/grub-install.c b/util/grub-install.c
+index a0eebae..b6acee6 100644
+--- a/util/grub-install.c
++++ b/util/grub-install.c
+@@ -364,6 +364,8 @@ get_default_platform (void)
+    return "riscv32-efi";
+ #elif __riscv_xlen == 64
+    return "riscv64-efi";
++#elif defined (__sw_64__)
++   return "sw64-efi";
+ #else
+    return NULL;
+ #endif
+@@ -544,6 +546,7 @@ have_bootdev (enum grub_install_plat pl)
+     case GRUB_INSTALL_PLATFORM_I386_XEN:
+     case GRUB_INSTALL_PLATFORM_X86_64_XEN:
+     case GRUB_INSTALL_PLATFORM_I386_XEN_PVH:
++    case GRUB_INSTALL_PLATFORM_SW64_EFI:
+       return 0;
+ 
+       /* pacify warning.  */
+@@ -1061,6 +1064,7 @@ main (int argc, char *argv[])
+     case GRUB_INSTALL_PLATFORM_I386_XEN:
+     case GRUB_INSTALL_PLATFORM_X86_64_XEN:
+     case GRUB_INSTALL_PLATFORM_I386_XEN_PVH:
++    case GRUB_INSTALL_PLATFORM_SW64_EFI:
+       break;
+ 
+     case GRUB_INSTALL_PLATFORM_I386_QEMU:
+@@ -1113,6 +1117,7 @@ main (int argc, char *argv[])
+     case GRUB_INSTALL_PLATFORM_I386_XEN:
+     case GRUB_INSTALL_PLATFORM_X86_64_XEN:
+     case GRUB_INSTALL_PLATFORM_I386_XEN_PVH:
++    case GRUB_INSTALL_PLATFORM_SW64_EFI:
+       free (install_device);
+       install_device = NULL;
+       break;
+@@ -1158,6 +1163,7 @@ main (int argc, char *argv[])
+     case GRUB_INSTALL_PLATFORM_RISCV64_EFI:
+     case GRUB_INSTALL_PLATFORM_MIPS64EL_EFI:
+     case GRUB_INSTALL_PLATFORM_IA64_EFI:
++    case GRUB_INSTALL_PLATFORM_SW64_EFI:
+       is_efi = 1;
+       break;
+     default:
+@@ -1310,6 +1316,9 @@ main (int argc, char *argv[])
+ 	  efi_suffix = "mips";
+ 	  efi_suffix_upper = "MIPS";
+ 	  break;
++	case GRUB_INSTALL_PLATFORM_SW64_EFI:
++	  efi_suffix = "sw64";
++	  efi_suffix_upper = "SW64";
+ 	default:
+ 	  break;
+ 	}
+@@ -1689,6 +1698,7 @@ main (int argc, char *argv[])
+ 		  case GRUB_INSTALL_PLATFORM_RISCV64_EFI:
+ 		  case GRUB_INSTALL_PLATFORM_MIPS64EL_EFI:
+ 		  case GRUB_INSTALL_PLATFORM_IA64_EFI:
++		  case GRUB_INSTALL_PLATFORM_SW64_EFI:
+ 		    g = grub_util_guess_efi_drive (*curdev);
+ 		    break;
+ 		  case GRUB_INSTALL_PLATFORM_SPARC64_IEEE1275:
+@@ -1786,6 +1796,7 @@ main (int argc, char *argv[])
+     case GRUB_INSTALL_PLATFORM_RISCV64_EFI:
+     case GRUB_INSTALL_PLATFORM_MIPS64EL_EFI:
+     case GRUB_INSTALL_PLATFORM_IA64_EFI:
++    case GRUB_INSTALL_PLATFORM_SW64_EFI:
+       core_name = "core.efi";
+       snprintf (mkimage_target, sizeof (mkimage_target),
+ 		"%s-%s",
+@@ -1911,6 +1922,7 @@ main (int argc, char *argv[])
+     case GRUB_INSTALL_PLATFORM_I386_XEN:
+     case GRUB_INSTALL_PLATFORM_X86_64_XEN:
+     case GRUB_INSTALL_PLATFORM_I386_XEN_PVH:
++    case GRUB_INSTALL_PLATFORM_SW64_EFI:
+       break;
+       /* pacify warning.  */
+     case GRUB_INSTALL_PLATFORM_MAX:
+@@ -2167,6 +2179,7 @@ main (int argc, char *argv[])
+     case GRUB_INSTALL_PLATFORM_RISCV64_EFI:
+     case GRUB_INSTALL_PLATFORM_MIPS64EL_EFI:
+     case GRUB_INSTALL_PLATFORM_IA64_EFI:
++    case GRUB_INSTALL_PLATFORM_SW64_EFI:
+       {
+ 	char *dst = grub_util_path_concat (2, efidir, efi_file);
+ 	char *removable_file = xasprintf ("BOOT%s.EFI", efi_suffix_upper);
+diff --git a/util/grub-mknetdir.c b/util/grub-mknetdir.c
+index f4f6795..17e641d 100644
+--- a/util/grub-mknetdir.c
++++ b/util/grub-mknetdir.c
+@@ -111,6 +111,7 @@ static struct
+     [GRUB_INSTALL_PLATFORM_RISCV32_EFI] = { "riscv32-efi", "efinet", ".efi" },
+     [GRUB_INSTALL_PLATFORM_RISCV64_EFI] = { "riscv64-efi", "efinet", ".efi" },
+     [GRUB_INSTALL_PLATFORM_MIPS64EL_EFI] = { "mips64el-efi", "efinet", ".efi" },
++    [GRUB_INSTALL_PLATFORM_SW64_EFI] = { "sw64-efi", "efinet", ".efi" },
+   };
+ 
+ static void
+diff --git a/util/grub-mkrescue.c b/util/grub-mkrescue.c
+index 8ca22e9..18b9c4c 100644
+--- a/util/grub-mkrescue.c
++++ b/util/grub-mkrescue.c
+@@ -565,7 +565,8 @@ main (int argc, char *argv[])
+ 	  || source_dirs[GRUB_INSTALL_PLATFORM_RISCV32_EFI]
+ 	  || source_dirs[GRUB_INSTALL_PLATFORM_RISCV64_EFI]
+ 	  || source_dirs[GRUB_INSTALL_PLATFORM_MIPS64EL_EFI]
+-	  || source_dirs[GRUB_INSTALL_PLATFORM_X86_64_EFI])
++	  || source_dirs[GRUB_INSTALL_PLATFORM_X86_64_EFI]
++	  || source_dirs[GRUB_INSTALL_PLATFORM_SW64_EFI])
+ 	system_area = SYS_AREA_COMMON;
+       else if (source_dirs[GRUB_INSTALL_PLATFORM_SPARC64_IEEE1275])
+ 	system_area = SYS_AREA_SPARC;
+@@ -766,7 +767,8 @@ main (int argc, char *argv[])
+       || source_dirs[GRUB_INSTALL_PLATFORM_LOONGARCH64_EFI]
+       || source_dirs[GRUB_INSTALL_PLATFORM_MIPS64EL_EFI]
+       || source_dirs[GRUB_INSTALL_PLATFORM_RISCV32_EFI]
+-      || source_dirs[GRUB_INSTALL_PLATFORM_RISCV64_EFI])
++      || source_dirs[GRUB_INSTALL_PLATFORM_RISCV64_EFI]
++      || source_dirs[GRUB_INSTALL_PLATFORM_SW64_EFI])
+     {
+       FILE *f;
+       char *efidir_efi = grub_util_path_concat (2, iso9660_dir, "EFI");
+@@ -828,6 +830,10 @@ main (int argc, char *argv[])
+       make_image_abs (GRUB_INSTALL_PLATFORM_RISCV64_EFI, "riscv64-efi", imgname);
+       free (imgname);
+ 
++      imgname = grub_util_path_concat (2, efidir_efi_boot, "bootsw64.efi");
++      make_image_fwdisk_abs (GRUB_INSTALL_PLATFORM_SW64_EFI, "sw64-efi", imgname);
++      free (imgname);
++
+       imgname = grub_util_path_concat (2, efidir_efi_boot, "bootmips64el.efi");
+       make_image_abs (GRUB_INSTALL_PLATFORM_MIPS64EL_EFI, "mips64el-efi", imgname);
+       free (imgname);
+diff --git a/util/mkimage.c b/util/mkimage.c
+index c56d2fd..e2d9561 100644
+--- a/util/mkimage.c
++++ b/util/mkimage.c
+@@ -425,6 +425,22 @@ static const struct grub_install_image_target_desc image_targets[] =
+       .pe_target = GRUB_PE32_MACHINE_IA64,
+       .elf_target = EM_IA_64,
+     },
++    {
++      .dirname = "sw64-efi",
++      .names = {"sw64-efi", NULL},
++      .voidp_sizeof = 8,
++      .bigendian = 0,
++      .id = IMAGE_EFI,
++      .flags = PLATFORM_FLAGS_NONE,
++      .total_module_size = TARGET_NO_FIELD,
++      .decompressor_compressed_size = TARGET_NO_FIELD,
++      .decompressor_uncompressed_size = TARGET_NO_FIELD,
++      .decompressor_uncompressed_addr = TARGET_NO_FIELD,
++      .section_align = GRUB_PE32_SECTION_ALIGNMENT,
++      .vaddr_offset = EFI64_HEADER_SIZE,
++      .pe_target = GRUB_PE32_MACHINE_SW_64,
++      .elf_target = EM_SW_64,
++    },
+     {
+       .dirname = "mips-arc",
+       .names = {"mips-arc", NULL},
+-- 
+2.20.1
+

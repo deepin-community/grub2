@@ -1,0 +1,59 @@
+From 884e61f725f2586a3ddccfa86d6162dd08291ec0 Mon Sep 17 00:00:00 2001
+From: sunway_fw <sunway_fw@wxiat.com>
+Date: Thu, 14 May 2026 08:46:14 +0800
+Subject: [PATCH 1/4] sw64: Add early startup code
+
+On entry, we need to save the system table pointer as well as our image
+handle. Add an early startup file that saves them and then brings us
+into our main function.
+
+Signed-off-by: sunway_fw <sunway_fw@wxiat.com>
+---
+ grub-core/kern/sw64/efi/startup.S | 35 +++++++++++++++++++++++++++++++
+ 1 file changed, 35 insertions(+)
+ create mode 100644 grub-core/kern/sw64/efi/startup.S
+
+diff --git a/grub-core/kern/sw64/efi/startup.S b/grub-core/kern/sw64/efi/startup.S
+new file mode 100644
+index 0000000..d3b3681
+--- /dev/null
++++ b/grub-core/kern/sw64/efi/startup.S
+@@ -0,0 +1,35 @@
++/*
++ *  GRUB  --  GRand Unified Bootloader
++ *  Copyright (C) 2026  Free Software Foundation, Inc.
++ *
++ *  GRUB is free software: you can redistribute it and/or modify
++ *  it under the terms of the GNU General Public License as published by
++ *  the Free Software Foundation, either version 3 of the License, or
++ *  (at your option) any later version.
++ *
++ *  GRUB is distributed in the hope that it will be useful,
++ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
++ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ *  GNU General Public License for more details.
++ *
++ *  You should have received a copy of the GNU General Public License
++ *  along with GRUB.  If not, see <http://www.gnu.org/licenses/>.
++ */
++
++#include <grub/symbol.h>
++#include <grub/sw64/regdef.h>
++
++       .file   "startup.S"
++       .text
++FUNCTION(_start)
++       /*
++        *  EFI_SYSTEM_TABLE and EFI_HANDLE are passed in a1/a0.
++        */
++       ldih    $29,0($27) !gpdisp!1
++       ldi     $29,0($29) !gpdisp!1
++       ldi     $20, EXT_C(grub_efi_image_handle)
++       stl     a0, 0($20)
++       ldi     $20, EXT_C(grub_efi_system_table)
++       stl     a1,  0($20)
++       call    $31, grub_main
++       ret
+-- 
+2.20.1
+

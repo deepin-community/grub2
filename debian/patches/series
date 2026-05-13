@@ -214,6 +214,13 @@ mips/0014-loader-mips64-linux-properly-prepare-memory-for-init.patch
 mips/0015-fix-util-grub-mkimagexx-unconditionaly-use-64-bit-ad.patch
 uniontech-mips-set-lang-c.patch
 
+# SW64 support
+sw64/0001-sw64-Add-early-startup-code.patch
+sw64/0002-sw64-Add-Linux-load-logic.patch
+sw64/0003-sw64-Add-awareness-for-SW64-reloations.patch
+sw64/0004-sw64-Add-auxiliary-files.patch
+sw64/0005-sw64-Add-to-build-system.patch
+
 # backport: fix riscv64 rdcycle
 use-time-register-in-grub_efi_get_time_ms.patch
 

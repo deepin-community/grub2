@@ -1,0 +1,544 @@
+From f05360e9f8ab302bf1c4eef275e163c5a6b5f9b6 Mon Sep 17 00:00:00 2001
+From: sunway_fw <sunway_fw@wxiat.com>
+Date: Thu, 14 May 2026 11:18:49 +0800
+Subject: [PATCH 3/4] sw64: Add awareness for SW64 reloations
+
+This patch adds awareness of SW64 relocations throughout the grub tools
+as well as dynamic linkage and elf->PE relocation conversion support.
+
+Signed-off-by: sunway_fw <sunway_fw@wxiat.com>
+---
+ grub-core/kern/sw64/dl.c    | 214 ++++++++++++++++++++++++++++++++++++
+ include/grub/dl.h           |  13 +++
+ include/grub/elf.h          |  38 +++++++
+ util/grub-mkimagexx.c       | 145 +++++++++++++++++++++++-
+ util/grub-module-verifier.c |  20 ++++
+ 5 files changed, 429 insertions(+), 1 deletion(-)
+ create mode 100644 grub-core/kern/sw64/dl.c
+
+diff --git a/grub-core/kern/sw64/dl.c b/grub-core/kern/sw64/dl.c
+new file mode 100644
+index 0000000..682e60a
+--- /dev/null
++++ b/grub-core/kern/sw64/dl.c
+@@ -0,0 +1,214 @@
++/* dl.c - arch-dependent part of loadable module support */
++/*
++ *  GRUB  --  GRand Unified Bootloader
++ *  Copyright (C) 2026  Free Software Foundation, Inc.
++ *
++ *  GRUB is free software: you can redistribute it and/or modify
++ *  it under the terms of the GNU General Public License as published by
++ *  the Free Software Foundation, either version 3 of the License, or
++ *  (at your option) any later version.
++ *
++ *  GRUB is distributed in the hope that it will be useful,
++ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
++ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ *  GNU General Public License for more details.
++ *
++ *  You should have received a copy of the GNU General Public License
++ *  along with GRUB.  If not, see <http://www.gnu.org/licenses/>.
++ */
++
++#include <grub/dl.h>
++#include <grub/elf.h>
++#include <grub/misc.h>
++#include <grub/err.h>
++#include <grub/mm.h>
++#include <grub/i18n.h>
++#include <grub/elf.h>
++
++/*
++ * Check if EHDR is a valid ELF header.
++ */
++grub_err_t
++grub_arch_dl_check_header (void *ehdr)
++{
++  Elf_Ehdr *e = ehdr;
++
++  /* Check the magic numbers.  */
++  if (e->e_ident[EI_DATA] != ELFDATA2LSB || e->e_machine != EM_SW_64)
++    return grub_error (GRUB_ERR_BAD_OS,
++		       N_("invalid arch-dependent ELF magic"));
++
++  return GRUB_ERR_NONE;
++}
++
++#pragma GCC diagnostic ignored "-Wcast-align"
++
++/* Relocate symbols. */
++grub_err_t
++grub_arch_dl_relocate_symbols (grub_dl_t mod, void *ehdr,
++                               Elf_Shdr *s, grub_dl_segment_t seg)
++{
++  Elf_Rela *rel, *max;
++  grub_uint64_t *gpptr, *gotptr;
++
++  gotptr = (grub_uint64_t *) mod->got;
++  gpptr = (grub_uint64_t *) ((grub_uint64_t) mod->got + 0x8000);
++
++  for (rel = (Elf_Rela *) ((char *) ehdr + s->sh_offset),
++         max = (Elf_Rela *) ((char *) rel + s->sh_size);
++       rel < max;
++       rel = (Elf_Rela *) ((char *) rel + s->sh_entsize))
++    {
++      grub_addr_t addr;
++      Elf_Sym *sym;
++      grub_uint64_t value;
++
++      if (seg->size < (rel->r_offset & ~3))
++              return grub_error (GRUB_ERR_BAD_MODULE,
++                              "reloc offset is out of the segment");
++
++      addr = (grub_addr_t) seg->addr + rel->r_offset;
++      sym = (Elf_Sym *) ((char *) mod->symtab
++                      + mod->symsize * ELF_R_SYM (rel->r_info));
++
++      /* On the SW64 the value does not have an explicit
++         addend, add it.  */
++      value = sym->st_value + rel->r_addend;
++
++      switch (ELF_R_TYPE (rel->r_info))
++        {
++        case R_SW64_NONE:
++          break;
++        case R_SW64_REFLONG:
++          *(grub_uint32_t *)addr = value;
++          break;
++        case R_SW64_REFQUAD:
++          {
++            *(grub_uint32_t *)addr = value;
++            *((grub_uint32_t *)addr + 1) = value >> 32;
++            break;
++          }
++        case R_SW64_GPREL32:
++          {
++            value -= (grub_uint64_t)gpptr;
++            if ((grub_int32_t)value != value)
++                    return grub_error (GRUB_ERR_BAD_MODULE,
++                                    "R_SW64_GPREL32 relocation out of range");
++            *(grub_uint32_t *) addr = value;
++            break;
++          }
++        case R_SW64_LITERAL:
++          {
++            grub_uint64_t li_hi;
++            grub_uint64_t li_lo;
++
++            li_hi = (grub_uint64_t) gotptr + (((grub_uint64_t)ELF_R_TYPE(rel->r_info)) >> 8 );
++            li_lo = li_hi - ((grub_uint64_t) gpptr);
++            if ((grub_int16_t)li_lo != li_lo)
++                    return grub_error (GRUB_ERR_BAD_MODULE,
++                                    "R_SW64_LITERAL relocation out of range");
++
++            *(grub_uint16_t *) addr = (li_lo & 0xffff);
++            *(grub_uint64_t *) (li_hi) = value;
++            gotptr++;
++            break;
++          }
++        case R_SW64_LITERAL_GOT:
++          break;
++        case R_SW64_LITUSE:
++          break;
++        case R_SW64_GPDISP:
++          {
++            grub_uint64_t hi;
++            grub_uint64_t lo;
++            grub_uint64_t gpoffset = (grub_int64_t)gpptr - addr;
++            lo = (grub_int16_t) gpoffset;
++            hi = (grub_int32_t) (gpoffset - lo);
++            if (hi + lo != gpoffset)
++                    return grub_error (GRUB_ERR_BAD_MODULE,
++                                    "R_SW64_GPDISP relocation out of range");
++
++            if (gpoffset & 0x8000) {
++                    hi = ((gpoffset + 0x8000) >> 16) & 0xffff;
++                    lo = gpoffset & 0xffff;
++            } else {
++                    hi = (gpoffset >> 16) & 0xffff;
++                    lo = gpoffset & 0xffff;
++            }
++
++            *(grub_uint32_t *) addr = ( *(grub_uint32_t *)addr & 0xffff0000) | (hi & 0xffff);
++            *(grub_uint32_t *) ((unsigned long)addr + rel->r_addend) =
++                    (((*(grub_uint32_t *)((unsigned long)addr + rel->r_addend)) & 0xffff0000) | (lo & 0xffff));
++            break;
++          }
++        case R_SW64_BRADDR:
++          {
++            grub_uint64_t braddr = (*(grub_uint64_t *)addr) + value - ((grub_uint64_t)addr + 4);
++            braddr = (grub_int64_t)braddr >> 2;
++            if (braddr + (1<<21) >= 1<<21)
++                    return grub_error (GRUB_ERR_BAD_MODULE,
++                                    "R_SW64_BRADDR relocation out of range");
++
++            *(grub_uint32_t *) addr = (*(grub_uint32_t *)addr & (~0x1fffff)) | (braddr & 0x1fffff);
++            break;
++          }
++        case R_SW64_HINT:
++          break;
++        case R_SW64_SREL32:
++          {
++            value -= (grub_uint64_t)addr;
++            if ((grub_int32_t)value != value)
++                    return grub_error (GRUB_ERR_BAD_MODULE,
++                                    "R_SW64_SREL32 relocation out of range");
++
++            *(grub_uint32_t *) addr = value;
++            break;
++          }
++        case R_SW64_SREL64:
++          {
++            grub_uint64_t srel64 = *(grub_uint64_t *)addr + value;;
++            srel64 -= (grub_uint64_t)addr;
++            *(grub_uint64_t *) addr = srel64;
++            break;
++          }
++        case R_SW64_GPRELHIGH:
++          {
++            grub_uint64_t gprel_hi = (grub_int64_t)(value - (grub_uint64_t)gpptr);
++
++            if (gprel_hi & 0x8000)
++                    gprel_hi = (grub_int64_t)(((grub_int64_t)gprel_hi + 0x8000) >> 16);
++            else
++                    gprel_hi = (grub_int64_t)gprel_hi >> 16;
++
++            if ((grub_int16_t)gprel_hi != gprel_hi)
++                    return grub_error (GRUB_ERR_BAD_MODULE,
++                                    "GPRELHIGH out of range\n");
++
++            *(grub_uint32_t *) addr = (*(grub_uint32_t *)addr & 0xffff0000) | (gprel_hi & 0xffff);
++            break;
++          }
++        case R_SW64_GPRELLOW:
++          {
++            grub_uint64_t gprel_lo = value - (grub_uint64_t)gpptr;
++            *(grub_uint32_t *) addr = (*(grub_uint32_t *)addr & 0xffff0000) | (gprel_lo & 0xffff);
++            break;
++          }
++        case R_SW64_GPREL16:
++          {
++            grub_uint64_t gprel16 = (*(grub_uint64_t *)addr + value);
++            gprel16 = (grub_uint64_t)(gprel16 - (grub_uint64_t)gpptr);
++            if ((grub_int16_t)gprel16 != gprel16)
++                    return grub_error (GRUB_ERR_BAD_MODULE,
++                                    "R_SW64_GPREL16 relocation out of range");
++            *(grub_uint16_t *) addr = gprel16;
++            break;
++          }
++        default:
++          return grub_error (GRUB_ERR_NOT_IMPLEMENTED_YET,
++                          N_("relocation 0x%lx is not implemented yet"),
++                          ELF_R_TYPE (rel->r_info));
++        }
++    }
++
++  return GRUB_ERR_NONE;
++}
+diff --git a/include/grub/dl.h b/include/grub/dl.h
+index cd1f46c..f316ab7 100644
+--- a/include/grub/dl.h
++++ b/include/grub/dl.h
+@@ -281,12 +281,25 @@ grub_err_t
+ grub_arm64_dl_get_tramp_got_size (const void *ehdr, grub_size_t *tramp,
+ 				  grub_size_t *got);
+ 
++#if defined (__sw_64__)
++#define GRUB_SW64_DL_TRAMP_ALIGN 16
++#define GRUB_SW64_DL_GOT_ALIGN 16
++
++grub_err_t
++grub_sw64_dl_get_tramp_got_size (const void *ehdr, grub_size_t *tramp,
++                                grub_size_t *got);
++#endif
++
+ #if defined (__ia64__)
+ #define GRUB_ARCH_DL_TRAMP_ALIGN GRUB_IA64_DL_TRAMP_ALIGN
+ #define GRUB_ARCH_DL_GOT_ALIGN GRUB_IA64_DL_GOT_ALIGN
+ #define grub_arch_dl_get_tramp_got_size grub_ia64_dl_get_tramp_got_size
+ #elif defined (__aarch64__)
+ #define grub_arch_dl_get_tramp_got_size grub_arm64_dl_get_tramp_got_size
++#elif defined (__sw_64__)
++#define GRUB_ARCH_DL_TRAMP_ALIGN GRUB_SW64_DL_TRAMP_ALIGN
++#define GRUB_ARCH_DL_GOT_ALIGN GRUB_SW64_DL_GOT_ALIGN
++#define grub_arch_dl_get_tramp_got_size grub_sw64_dl_get_tramp_got_size
+ #else
+ grub_err_t
+ grub_arch_dl_get_tramp_got_size (const void *ehdr, grub_size_t *tramp,
+diff --git a/include/grub/elf.h b/include/grub/elf.h
+index bd313a7..472b1bf 100644
+--- a/include/grub/elf.h
++++ b/include/grub/elf.h
+@@ -259,6 +259,7 @@ typedef struct
+    chances of collision with official or non-GNU unofficial values.  */
+ 
+ #define EM_ALPHA	0x9026
++#define EM_SW_64        0x9916
+ 
+ /* Legal values for e_version (version).  */
+ 
+@@ -2537,6 +2538,43 @@ typedef Elf32_Addr Elf32_Conflict;
+ #define R_RISCV_SET32           56
+ #define R_RISCV_32_PCREL        57
+ 
++/*
++ * SW-64 ELF relocation types
++ */
++#define R_SW64_NONE            0       /* No reloc */
++#define R_SW64_REFLONG         1       /* Direct 32 bit */
++#define R_SW64_REFQUAD         2       /* Direct 64 bit */
++#define R_SW64_GPREL32         3       /* GP relative 32 bit */
++#define R_SW64_LITERAL         4       /* GP relative 16 bit w/optimization */
++#define R_SW64_LITUSE          5       /* Optimization hint for LITERAL */
++#define R_SW64_GPDISP          6       /* Add displacement to GP */
++#define R_SW64_BRADDR          7       /* PC+4 relative 23 bit shifted */
++#define R_SW64_HINT            8       /* PC+4 relative 16 bit shifted */
++#define R_SW64_SREL32          10      /* PC relative 32 bit */
++#define R_SW64_SREL64          11      /* PC relative 64 bit */
++#define R_SW64_GPRELHIGH       17      /* GP relative 32 bit, high 16 bits */
++#define R_SW64_GPRELLOW        18      /* GP relative 32 bit, low 16 bits */
++#define R_SW64_GPREL16         19      /* GP relative 16 bit */
++#define R_SW64_COPY            24      /* Copy symbol at runtime */
++#define R_SW64_GLOB_DAT        25      /* Create GOT entry */
++#define R_SW64_JMP_SLOT        26      /* Create PLT entry */
++#define R_SW64_RELATIVE        27      /* Adjust by program base */
++#define R_SW64_BRSGP           28
++#define R_SW64_TLSGD           29
++#define R_SW64_TLS_LDM         30
++#define R_SW64_DTPMOD64        31
++#define R_SW64_GOTDTPREL       32
++#define R_SW64_DTPREL64        33
++#define R_SW64_DTPRELHI        34
++#define R_SW64_DTPRELLO        35
++#define R_SW64_DTPREL16        36
++#define R_SW64_GOTTPREL        37
++#define R_SW64_TPREL64         38
++#define R_SW64_TPRELHI         39
++#define R_SW64_TPRELLO         40
++#define R_SW64_TPREL16         41
++#define R_SW64_LITERAL_GOT     43
++
+ /* LoongArch relocations */
+ #define R_LARCH_NONE			      0
+ #define R_LARCH_64			      2
+diff --git a/util/grub-mkimagexx.c b/util/grub-mkimagexx.c
+index e50b295..d50a178 100644
+--- a/util/grub-mkimagexx.c
++++ b/util/grub-mkimagexx.c
+@@ -782,8 +782,14 @@ SUFFIX (relocate_addrs) (Elf_Ehdr *e, struct section_metadata *smd,
+   Elf_Half i;
+   Elf_Shdr *s;
+ #ifdef MKIMAGE_ELF64
++  grub_uint64_t got_offset = 0;
++
+   struct grub_ia64_trampoline *tr = (void *) (pe_target + tramp_off);
+   grub_uint64_t *gpptr = (void *) (pe_target + got_off);
++  if (image_target->elf_target == EM_SW_64) {
++    got_offset = got_off;
++    gpptr = (void *) (pe_target + got_offset + 0x8000);
++  }
+   unsigned unmatched_adr_got_page = 0;
+   struct grub_loongarch64_stack stack;
+   grub_loongarch64_stack_init (&stack);
+@@ -1126,6 +1132,119 @@ SUFFIX (relocate_addrs) (Elf_Ehdr *e, struct section_metadata *smd,
+ 		   }
+ 	       break;
+ 	       }
++             case EM_SW_64:
++              {
++               sym_addr += addend;
++               switch (ELF_R_TYPE (info))
++                 {
++                 case R_SW64_NONE:
++                   break;
++                 case R_SW64_REFLONG:
++                   *(grub_uint32_t *)target = grub_host_to_target32 (sym_addr);
++                   break;
++                 case R_SW64_REFQUAD:
++                   {
++                     *(grub_uint32_t *)target = grub_host_to_target32(sym_addr);
++                     *((grub_uint32_t *)target + 1) = grub_host_to_target32(sym_addr >> 32);
++                     break;
++                   }
++                 case R_SW64_GPREL32:
++                   {
++                     *(grub_uint32_t *) target = (grub_host_to_target64 (sym_addr) -
++                                     ((char *) gpptr - (char *)pe_target + image_target->vaddr_offset )) & 0xffffffff;
++                     break;
++                   }
++                 case R_SW64_LITERAL:
++                   {
++                     grub_uint64_t li_hi;
++                     grub_uint64_t li_lo;
++
++                     li_hi = (grub_uint64_t)pe_target + got_offset + (((grub_uint64_t)ELF_R_TYPE(r->r_info)) >> 8 );
++                     li_lo = li_hi - ((grub_uint64_t) gpptr);
++                     *(grub_uint16_t *) target = (li_lo & 0xffff);
++                     *(grub_uint64_t *) (li_hi) = grub_host_to_target64(grub_host_to_target64 (sym_addr));
++                     got_offset += 8;
++                     break;
++                   }
++                 case R_SW64_LITERAL_GOT:
++                   break;
++                 case R_SW64_LITUSE:
++                   break;
++                 case R_SW64_GPDISP:
++                   {
++                     grub_uint64_t hi;
++                     grub_uint64_t lo;
++                     grub_int64_t gpoffset = (((char *) gpptr - (char *) pe_target + image_target->vaddr_offset))
++                             - ((offset + target_section_addr + image_target->vaddr_offset));
++                     if (gpoffset & 0x8000) {
++                             hi = ((gpoffset + 0x8000) >> 16) & 0xffff;
++                             lo = gpoffset & 0xffff;
++                     } else {
++                             hi = (gpoffset >> 16) & 0xffff;
++                             lo = gpoffset & 0xffff;
++                     }
++                     *(grub_uint32_t *) target = grub_host_to_target32 ((grub_target_to_host32 (*target) & 0xffff0000) | (hi & 0xffff));
++                     *(grub_uint32_t *) ((unsigned long)target + addend) =
++                             grub_host_to_target32 ((grub_target_to_host32 (*(grub_uint32_t *)
++                                                             ((unsigned long)target + addend)) & 0xffff0000) | (lo & 0xffff));
++                     break;
++
++                   }
++                 case R_SW64_BRADDR:
++                   {
++                     grub_uint64_t braddr = grub_host_to_target64 (grub_target_to_host64 (*target) + sym_addr) - ((grub_uint64_t)target + 4);
++                     braddr = braddr >> 2;
++                     *(grub_uint32_t *) target = (*(grub_uint32_t *)target & (~0x1fffff)) | (braddr & 0x1fffff);
++                     break;
++                   }
++                 case R_SW64_HINT:
++                   break;
++                 case R_SW64_SREL32:
++                   {
++                     grub_uint64_t srel32 = grub_host_to_target64 (grub_target_to_host64 (*target) + sym_addr);
++                     srel32 -= (grub_uint64_t)target;
++                     *(grub_uint32_t *) target = srel32;
++                     break;
++                   }
++                 case R_SW64_SREL64:
++                   {
++                     grub_uint64_t srel64 = grub_host_to_target64 (grub_target_to_host64 (*target) + sym_addr);
++                     srel64 -= (grub_uint64_t)target;
++                     *(grub_uint64_t *) target = srel64;
++                     break;
++                   }
++                 case R_SW64_GPRELHIGH:
++                   {
++                     grub_uint64_t gprel_hi = ((grub_host_to_target64 (sym_addr) - (((char *) gpptr - (char *)pe_target + image_target->vaddr_offset) + 0x0)));
++
++                     if (gprel_hi & 0x8000)
++                             gprel_hi = ((gprel_hi + 0x8000) >> 16) & 0xffff;
++                     else
++                             gprel_hi = (gprel_hi >> 16) & 0xffff;
++
++                     *(grub_uint32_t *) target = grub_host_to_target32 ((grub_target_to_host32 (*target) & 0xffff0000) | (gprel_hi & 0xffff));
++                     break;
++                   }
++                 case R_SW64_GPRELLOW:
++                   {
++                     grub_uint64_t gprel_lo = (grub_host_to_target64 (sym_addr) - ((char *) gpptr - (char *)pe_target + image_target->vaddr_offset));
++                     *(grub_uint32_t *) target = grub_host_to_target32 ((grub_target_to_host32 (*target) & 0xffff0000) | (gprel_lo & 0xffff));
++                     break;
++                   }
++                 case R_SW64_GPREL16:
++                   {
++                     grub_uint64_t gprel16 = grub_host_to_target64 (grub_target_to_host64 (*target) + sym_addr);
++                     gprel16 = (grub_uint64_t)(gprel16 - (grub_uint64_t)gpptr);
++                     *(grub_uint16_t *) target = gprel16;
++                     break;
++                   }
++                 default:
++                   grub_util_error (_("relocation 0x%lx is not implemented yet"),
++                                   ELF_R_TYPE (info));
++                   break;
++                 }
++               break;
++              }
+ 	     case EM_LOONGARCH:
+ 	       {
+ 		 grub_int64_t pc;
+@@ -1663,6 +1782,19 @@ translate_relocation_pe (struct translate_context *ctx,
+ 			       image_target);
+ 	}
+       break;
++    case EM_SW_64:
++      if (ELF_R_TYPE (info) == R_SW64_REFQUAD)
++        {
++         grub_util_info ("adding a relocation entry for 0x%llx",
++                         (unsigned long long) addr);
++         ctx->current_address
++           = add_fixup_entry (&ctx->lst,
++                              GRUB_PE32_REL_BASED_DIR64,
++                              addr,
++                              0, ctx->current_address,
++                              image_target);
++       }
++      break;
+     case EM_IA_64:
+       switch (ELF_R_TYPE (info))
+ 	{
+@@ -2144,7 +2276,7 @@ make_reloc_section (Elf_Ehdr *e, struct grub_mkimage_layout *layout,
+ 		       + image_target->vaddr_offset,
+ 		       2 * layout->ia64jmpnum,
+ 		       image_target);
+-  if (image_target->elf_target == EM_IA_64 || image_target->elf_target == EM_AARCH64)
++  if (image_target->elf_target == EM_IA_64 || image_target->elf_target == EM_AARCH64 || image_target->elf_target == EM_SW_64)
+     create_u64_fixups (&ctx,
+ 		       layout->got_off
+ 		       + image_target->vaddr_offset,
+@@ -2516,6 +2648,17 @@ SUFFIX (grub_mkimage_load_image) (const char *kernel_path,
+ 	  layout->got_off = layout->kernel_size;
+ 	  layout->kernel_size += ALIGN_UP (layout->got_size, 16);
+ 	}
++      else if (image_target->elf_target == EM_SW_64)
++        {
++          grub_size_t tramp;
++
++          layout->kernel_size = ALIGN_UP (layout->kernel_size, 16);
++
++          grub_sw64_dl_get_tramp_got_size (e, &tramp, &layout->got_size);
++
++          layout->got_off = layout->kernel_size;
++          layout->kernel_size += ALIGN_UP (layout->got_size, 16);
++        }
+ #endif
+ 
+       if (image_target->id == IMAGE_EFI)
+diff --git a/util/grub-module-verifier.c b/util/grub-module-verifier.c
+index 91d9e8f..9d41c8b 100644
+--- a/util/grub-module-verifier.c
++++ b/util/grub-module-verifier.c
+@@ -209,6 +209,26 @@ struct grub_module_verifier_arch archs[] = {
+       -1
+     }
+   },
++  { "sw64", 8, 0, EM_SW_64, GRUB_MODULE_VERIFY_SUPPORTS_REL | GRUB_MODULE_VERIFY_SUPPORTS_RELA, (int[]){
++      R_SW64_NONE,
++      R_SW64_REFLONG,
++      R_SW64_REFQUAD,
++      R_SW64_GPREL32,
++      R_SW64_LITERAL,
++      R_SW64_LITERAL_GOT,
++      R_SW64_LITUSE,
++      R_SW64_GPDISP,
++      R_SW64_BRSGP,
++      R_SW64_BRADDR,
++      R_SW64_HINT,
++      R_SW64_SREL32,
++      R_SW64_SREL64,
++      R_SW64_GPRELHIGH,
++      R_SW64_GPRELLOW,
++      R_SW64_GPREL16,
++      -1
++    }
++  },
+ };
+ 
+ struct platform_whitelist {
+-- 
+2.20.1
+

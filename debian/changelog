@@ -1,3 +1,9 @@
+grub2 (2.12-7deepin12) unstable; urgency=medium
+
+  * feat: Add SW64 arch support.
+
+ -- sunway_fw <sunway_fw@wxiat.com>  Wed, 6 May 2026 09:30:00 +0800
+
 grub2 (2.12-7deepin11) unstable; urgency=medium
 
   * fix(util): Skip directory entries with .mo/.gmo suffix in copy_locales().

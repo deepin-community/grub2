@@ -1,0 +1,612 @@
+From 0b5a59ddf5d6fd0589b43fdff4fd1226423b2252 Mon Sep 17 00:00:00 2001
+From: sunway_fw <sunway_fw@wxiat.com>
+Date: Thu, 14 May 2026 10:59:23 +0800
+Subject: [PATCH 2/4] sw64: Add Linux load logic
+
+We currently only support to run grub on SW64 as UEFI payload. Ideally,
+we also only want to support running Linux underneath as UEFI payload.
+
+Signed-off-by: sunway_fw <sunway_fw@wxiat.com>
+---
+ grub-core/loader/sw64/efi/linux.c | 535 ++++++++++++++++++++++++++++++
+ include/grub/sw64/linux.h         |  46 +++
+ 2 files changed, 581 insertions(+)
+ create mode 100644 grub-core/loader/sw64/efi/linux.c
+ create mode 100644 include/grub/sw64/linux.h
+
+diff --git a/grub-core/loader/sw64/efi/linux.c b/grub-core/loader/sw64/efi/linux.c
+new file mode 100644
+index 0000000..fd2d713
+--- /dev/null
++++ b/grub-core/loader/sw64/efi/linux.c
+@@ -0,0 +1,535 @@
++/*
++ *  GRUB  --  GRand Unified Bootloader
++ *  Copyright (C) 2026  Free Software Foundation, Inc.
++ *
++ *  GRUB is free software: you can redistribute it and/or modify
++ *  it under the terms of the GNU General Public License as published by
++ *  the Free Software Foundation, either version 3 of the License, or
++ *  (at your option) any later version.
++ *
++ *  GRUB is distributed in the hope that it will be useful,
++ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
++ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ *  GNU General Public License for more details.
++ *
++ *  You should have received a copy of the GNU General Public License
++ *  along with GRUB.  If not, see <http://www.gnu.org/licenses/>.
++ */
++
++#include <grub/loader.h>
++#include <grub/file.h>
++#include <grub/disk.h>
++#include <grub/err.h>
++#include <grub/misc.h>
++#include <grub/types.h>
++#include <grub/command.h>
++#include <grub/dl.h>
++#include <grub/mm.h>
++#include <grub/cache.h>
++#include <grub/kernel.h>
++#include <grub/efi/api.h>
++#include <grub/efi/fdtload.h>
++#include <grub/efi/efi.h>
++#include <grub/elf.h>
++#include <grub/elfload.h>
++#include <grub/i18n.h>
++#include <grub/env.h>
++#include <grub/cpu/linux.h>
++#include <grub/lib/cmdline.h>
++#include <grub/linux.h>
++#include <grub/fdt.h>
++#include <grub/efi/memory.h>
++
++GRUB_MOD_LICENSE ("GPLv3+");
++
++#pragma GCC diagnostic ignored "-Wcast-align"
++
++#define GRUB_EFI_SW64_FIRMWARE_INFO  { 0xc47a23c3, 0xcebb, 0x4cc9, \
++       { 0xa5, 0xe2, 0xde, 0xd0, 0x8f, 0xe4, 0x20, 0xb5 } }
++
++#define GRUB_EFI_SW64_MEMORY_ATTRIBUTES  { 0xdcfa911d, 0x26eb, 0x469f, \
++       { 0xa2, 0x20, 0x38, 0xb7, 0xdc, 0x46, 0x12, 0x20 } }
++
++#define SW64_EFI_FIRMWARE_INFO_SIGNATURE        \
++         ('S' << 24 | 'H' << 16 | 'I' << 8 | 'F')
++
++static grub_dl_t my_mod;
++static int loaded;
++static char *linux_args;
++
++/* Initrd base and size.  */
++static void *initrd_mem;
++static grub_efi_uintn_t initrd_pages;
++static grub_addr_t initrd_start;
++static grub_efi_uintn_t initrd_size;
++static grub_uint64_t linux_entry;
++
++struct sw64_firmware_info_head
++{
++  grub_uint32_t signature;
++  grub_uint32_t revision;
++  grub_uint32_t length;
++};
++
++struct sw64_firmware_info
++{
++  struct sw64_firmware_info_head firmware_info_head;
++  grub_uint32_t reserved;
++  grub_uint32_t need_boot_param;
++};
++
++void *raw_fdt;
++static struct boot_param *sunway_boot_params = (struct boot_param *)BOOT_PARAM_START;
++
++static grub_efi_uint32_t
++sw64_efi_get_boot_param (void)
++{
++  unsigned i;
++  struct sw64_firmware_info_head *firmware_info_head;
++  static grub_packed_guid_t info_guid = GRUB_EFI_SW64_FIRMWARE_INFO;
++
++  for (i = 0; i < grub_efi_system_table->num_table_entries; i++)
++    {
++      grub_packed_guid_t *guid =
++        (grub_packed_guid_t *)&grub_efi_system_table->configuration_table[i].vendor_guid;
++
++      if (! grub_memcmp (guid, &info_guid, sizeof (grub_packed_guid_t)))
++      {
++        firmware_info_head = grub_efi_system_table->configuration_table[i].vendor_table;
++        if (firmware_info_head->signature != SW64_EFI_FIRMWARE_INFO_SIGNATURE) {
++	  /*
++	   * No matching SW64 firmware info table found.
++	   * Return 1 intentionally to fall back to legacy boot parameter handling.
++	   * This covers platforms without the specific GUID or with older firmware.
++	   */
++          return 1;
++        }
++
++        if (firmware_info_head->revision == 1) {
++          return ((struct sw64_firmware_info *)firmware_info_head)->need_boot_param;
++        }
++      }
++    }
++  return 1;
++}
++
++static void
++sw64_efi_memattr_repair (void)
++{
++  unsigned i;
++  static grub_packed_guid_t info_guid = GRUB_EFI_SW64_MEMORY_ATTRIBUTES;
++
++  for (i = 0; i < grub_efi_system_table->num_table_entries; i++) {
++    grub_packed_guid_t *guid = (grub_packed_guid_t *)&grub_efi_system_table->configuration_table[i].vendor_guid;
++
++    if (! grub_memcmp (guid, &info_guid, sizeof (grub_packed_guid_t))) {
++      grub_efi_system_table->configuration_table[i].vendor_table = (void *)grub_virt_to_phys((grub_uint64_t)grub_efi_system_table->configuration_table[i].vendor_table);
++    }
++  }
++}
++
++typedef
++void
++(*jump_to_kernel) (
++  grub_uint64_t magic,
++  grub_uint64_t device_tree_base
++  );
++
++static grub_err_t
++finalize_params_linux (void)
++{
++  int retval;
++  int node;
++  grub_efi_uintn_t mmap_size;
++  grub_efi_uintn_t map_key;
++  grub_efi_uintn_t desc_size;
++  grub_efi_uint32_t desc_version;
++  grub_efi_memory_descriptor_t *mmap_buf;
++  grub_efi_uintn_t i;
++  grub_uint32_t bootargs_size;
++  const char *last_bootargs;
++  static char *temp_linux_args;
++
++  mmap_buf = 0;
++
++  raw_fdt = grub_fdt_load (GRUB_EFI_LINUX_FDT_EXTRA_SPACE);
++
++  if (!raw_fdt || grub_fdt_check_header_nosize(raw_fdt)) {
++    goto failure;
++  }
++
++  node = grub_fdt_find_subnode (raw_fdt, 0, "chosen");
++  if (node < 0)
++    node = grub_fdt_add_subnode (raw_fdt, 0, "chosen");
++
++  if (node < 1)
++    goto failure;
++
++  initrd_start  = grub_virt_to_phys (initrd_start);
++
++  if (initrd_start) {
++    retval = grub_fdt_set_prop64 (raw_fdt, node, "linux,initrd-start", initrd_start);
++    if (retval)
++      goto failure;
++
++    retval = grub_fdt_set_prop64 (raw_fdt, node, "linux,initrd-end", initrd_start + initrd_size);
++    if (retval)
++      goto failure;
++  }
++
++  last_bootargs = grub_fdt_get_prop (raw_fdt, node, "bootargs", &bootargs_size);
++  if (last_bootargs && grub_strlen (last_bootargs) > 1) {
++    temp_linux_args = grub_malloc (grub_strlen (linux_args) + bootargs_size + 1);
++    if (!temp_linux_args)
++    {
++      grub_error (GRUB_ERR_OUT_OF_MEMORY, N_("out of memory in finalize_params_linux"));
++      goto failure;
++    }
++    grub_memcpy (temp_linux_args, last_bootargs, bootargs_size - 1);
++    *(temp_linux_args + bootargs_size - 1) = ' ';
++    grub_memcpy (temp_linux_args + bootargs_size, linux_args, grub_strlen (linux_args) + 1);
++    grub_free (linux_args);
++    linux_args = temp_linux_args;
++  }
++
++  retval = grub_fdt_set_prop (raw_fdt, node, "bootargs", linux_args, grub_strlen (linux_args) + 1);
++  if (retval)
++    goto failure;
++
++  retval = grub_fdt_set_prop64 (raw_fdt, node, "linux,uefi-system-table",
++                                grub_virt_to_phys((grub_uint64_t)grub_efi_system_table));
++  if (retval)
++    goto failure;
++
++  mmap_size = grub_efi_find_mmap_size ();
++  if (! mmap_size)
++    goto failure;
++
++  mmap_buf = grub_efi_allocate_any_pages (GRUB_EFI_BYTES_TO_PAGES (mmap_size));
++  if (! mmap_buf)
++    goto failure;
++
++  grub_efi_finish_boot_services (&mmap_size, mmap_buf, &map_key, &desc_size, &desc_version);
++
++  retval = grub_fdt_set_prop64 (raw_fdt, node, "linux,uefi-mmap-start",
++      grub_virt_to_phys((grub_uint64_t)mmap_buf));
++
++  retval = grub_fdt_set_prop64 (raw_fdt, node, "linux,uefi-mmap-size", mmap_size);
++  if (retval)
++    goto failure_without_dprintf;
++
++  retval = grub_fdt_set_prop64 (raw_fdt, node, "linux,uefi-mmap-desc-size", desc_size);
++  if (retval)
++    goto failure_without_dprintf;
++
++  retval = grub_fdt_set_prop64 (raw_fdt, node, "linux,uefi-mmap-desc-ver", desc_version);
++  if (retval)
++    goto failure_without_dprintf;
++
++  for (i = 0; i < mmap_size / desc_size; i++) {
++    grub_efi_memory_descriptor_t *curdesc = (grub_efi_memory_descriptor_t *)
++      ((char *) mmap_buf + desc_size * i);
++
++    curdesc->physical_start = grub_virt_to_phys(curdesc->physical_start);
++  }
++
++  sw64_efi_memattr_repair();
++
++  return GRUB_ERR_NONE;
++
++failure:
++  grub_dprintf ("linux", "something went wrong in finalize_params_linux\n");
++
++failure_without_dprintf:
++  raw_fdt = 0;
++  return GRUB_ERR_BAD_OS;
++}
++
++static grub_err_t
++legacy_finalize_params_linux (void)
++{
++  grub_efi_uintn_t mmap_size;
++  grub_efi_uintn_t map_key;
++  grub_efi_uintn_t desc_size;
++  grub_efi_uint32_t desc_version;
++  grub_efi_memory_descriptor_t *mmap_buf;
++  grub_err_t err;
++  grub_efi_uintn_t i;
++
++  /* Initrd.  */
++  sunway_boot_params->initrd_start = (grub_uint64_t)initrd_start;
++  sunway_boot_params->initrd_size = (grub_uint64_t)initrd_size;
++
++  /* DTB. */
++  raw_fdt = grub_fdt_load (GRUB_EFI_LINUX_FDT_EXTRA_SPACE);
++
++  if (!raw_fdt)
++    {
++      sunway_boot_params->dtb_start = 0;
++      grub_dprintf ("linux", "not found registered FDT\n");
++    }
++
++  if (raw_fdt)
++    {
++      err = grub_fdt_check_header_nosize(raw_fdt);
++      if (err)
++	grub_dprintf ("linux", "illegal FDT file\n");
++
++      sunway_boot_params->dtb_start = (grub_uint64_t)raw_fdt;
++      grub_dprintf ("linux", "dtb: [addr=0x%lx, size=0x%x]\n",
++		      (grub_uint64_t) raw_fdt, grub_fdt_get_totalsize(raw_fdt));
++    }
++
++  /* MDT.
++     Must be done after grub_machine_fini because map_key is used by
++     exit_boot_services.  */
++  mmap_size = grub_efi_find_mmap_size ();
++  if (! mmap_size) {
++    grub_dprintf ("linux", "unable to get mmap_size\n");
++    return GRUB_ERR_BAD_OS;
++  }
++  mmap_buf = grub_efi_allocate_any_pages (GRUB_EFI_BYTES_TO_PAGES (mmap_size));
++  if (! mmap_buf) {
++    grub_dprintf ("linux", "cannot allocate memory map\n");
++    return GRUB_ERR_BAD_OS;
++  }
++  err = grub_efi_finish_boot_services (&mmap_size, mmap_buf, &map_key,
++                                       &desc_size, &desc_version);
++  for (i = 0; i < mmap_size / desc_size; i++)
++    {
++      grub_efi_memory_descriptor_t *curdesc = (grub_efi_memory_descriptor_t *)
++        ((char *) mmap_buf + desc_size * i);
++
++      curdesc->physical_start = grub_virt_to_phys(curdesc->physical_start);
++    }
++
++  sw64_efi_memattr_repair();
++
++  sunway_boot_params->command_line = (grub_uint64_t) linux_args;
++  sunway_boot_params->efi_systab = grub_virt_to_phys((grub_uint64_t)grub_efi_system_table);
++  sunway_boot_params->efi_memmap = grub_virt_to_phys((grub_uint64_t)mmap_buf);
++  sunway_boot_params->efi_memmap_size = mmap_size;
++  sunway_boot_params->efi_memdesc_size = desc_size;
++  sunway_boot_params->efi_memdesc_version = desc_version;
++
++  return GRUB_ERR_NONE;
++}
++static void
++start_kernel(void)
++{
++  grub_dprintf ("linux", "Jump to entry: %lx\n", linux_entry);
++
++  jump_to_kernel jump = (jump_to_kernel) linux_entry;
++  if (sw64_efi_get_boot_param()) {
++    jump (0, 0);
++  } else {
++    jump (0xdeed2024, (grub_uint64_t)raw_fdt);
++  }
++}
++
++static grub_err_t
++grub_linux_boot (void)
++{
++  if (sw64_efi_get_boot_param()) {
++    legacy_finalize_params_linux();
++  } else {
++    finalize_params_linux();
++  }
++
++  start_kernel ();
++  return GRUB_ERR_NONE;
++}
++
++static grub_err_t
++grub_linux_unload (void)
++{
++  grub_free (linux_args);
++  linux_args = NULL;
++  if (initrd_mem)
++    {
++      grub_efi_free_pages ((grub_addr_t) initrd_mem, initrd_pages);
++      initrd_mem = NULL;
++      initrd_start = 0;
++    }
++  loaded = 0;
++  grub_dl_unref (my_mod);
++  return GRUB_ERR_NONE;
++}
++
++static grub_err_t
++grub_load_elf64 (grub_elf_t elf, const char *filename)
++{
++  Elf64_Addr base_addr;
++  grub_size_t linux_size;
++  grub_uint64_t align;
++
++  if (elf->ehdr.ehdr64.e_ident[EI_MAG0] != ELFMAG0
++      || elf->ehdr.ehdr64.e_ident[EI_MAG1] != ELFMAG1
++      || elf->ehdr.ehdr64.e_ident[EI_MAG2] != ELFMAG2
++      || elf->ehdr.ehdr64.e_ident[EI_MAG3] != ELFMAG3
++      || elf->ehdr.ehdr64.e_ident[EI_DATA] != ELFDATA2LSB)
++    return grub_error(GRUB_ERR_UNKNOWN_OS,
++		      N_("invalid arch-independent ELF magic"));
++
++  if (elf->ehdr.ehdr64.e_ident[EI_CLASS] != ELFCLASS64
++      || elf->ehdr.ehdr64.e_version != EV_CURRENT
++      || elf->ehdr.ehdr64.e_machine != EM_SW_64)
++    return grub_error (GRUB_ERR_UNKNOWN_OS,
++		       N_("invalid arch-dependent ELF magic"));
++
++  if (elf->ehdr.ehdr64.e_type != ET_EXEC)
++    return grub_error (GRUB_ERR_UNKNOWN_OS,
++		       N_("this ELF file is not of the right type"));
++
++  /* FIXME: Should we support program headers at strange locations?  */
++  if (elf->ehdr.ehdr64.e_phoff + elf->ehdr.ehdr64.e_phnum * elf->ehdr.ehdr64.e_phentsize > GRUB_ELF_SEARCH)
++    return grub_error (GRUB_ERR_BAD_OS, "program header at a too high offset");
++
++  linux_size = grub_elf64_size (elf, &base_addr, &align);
++  if (linux_size == 0)
++    return grub_error (GRUB_ERR_BAD_OS, "linux size is 0");
++
++  linux_entry = (grub_uint64_t)elf->ehdr.ehdr64.e_entry;
++  grub_dprintf ("linux", "Segment phy_addr: %lx  entry: %lx\n", (grub_uint64_t)base_addr,(grub_uint64_t)elf->ehdr.ehdr64.e_entry);
++
++  /* Now load the segments into the area we claimed.  */
++  return grub_elf64_load (elf, filename, (void *) (grub_addr_t) (0), GRUB_ELF_LOAD_FLAGS_NONE, 0, 0);
++}
++
++static grub_err_t
++grub_cmd_linux (grub_command_t cmd __attribute__ ((unused)),
++		int argc, char *argv[])
++{
++  grub_ssize_t size;
++  grub_elf_t elf = 0;
++
++  grub_dl_ref (my_mod);
++
++  grub_loader_unset ();
++
++  if (argc == 0)
++    {
++      grub_error (GRUB_ERR_BAD_ARGUMENT, N_("filename expected"));
++      goto fail;
++    }
++
++  elf = grub_elf_open (argv[0], GRUB_FILE_TYPE_LINUX_KERNEL);
++  if (! elf)
++    goto fail;
++
++  grub_dprintf ("linux", "Loading linux: %s\n", argv[0]);
++
++  if (grub_load_elf64 (elf, argv[0]))
++    goto fail;
++
++  grub_memset (sunway_boot_params, 0, sizeof(*sunway_boot_params));
++  size = grub_loader_cmdline_size(argc, argv);
++
++  linux_args = grub_malloc (size + sizeof (LINUX_IMAGE));
++  if (!linux_args)
++    {
++      grub_error (GRUB_ERR_OUT_OF_MEMORY, N_("out of memory"));
++      goto fail;
++    }
++
++  /* Create kernel command line.  */
++  grub_memcpy (linux_args, LINUX_IMAGE, sizeof (LINUX_IMAGE));
++  grub_create_loader_cmdline (argc, argv, linux_args + sizeof (LINUX_IMAGE) - 1,
++                              size, GRUB_VERIFY_KERNEL_CMDLINE);
++
++  grub_dprintf ("linux", "linux_args: '%s'\n", linux_args);
++  grub_errno = GRUB_ERR_NONE;
++
++  grub_loader_set (grub_linux_boot, grub_linux_unload, 0);
++
++ fail:
++  if (elf)
++    grub_elf_close (elf);
++
++  if (grub_errno != GRUB_ERR_NONE)
++    {
++      grub_dl_unref (my_mod);
++      loaded = 0;
++
++      grub_free (linux_args);
++      linux_args = NULL;
++    }
++  else
++    loaded = 1;
++
++  return grub_errno;
++}
++
++static grub_err_t
++grub_cmd_initrd (grub_command_t cmd __attribute__ ((unused)),
++		 int argc, char *argv[])
++{
++  if (initrd_mem)
++  {
++    grub_efi_free_pages ((grub_addr_t) initrd_mem, initrd_pages);
++    initrd_mem = NULL;
++    initrd_start = 0;
++  }
++
++  struct grub_linux_initrd_context initrd_ctx = { 0, 0, 0 };
++
++  if (argc == 0)
++    {
++      grub_error (GRUB_ERR_BAD_ARGUMENT, N_("filename expected"));
++      goto fail;
++    }
++
++  if (! loaded)
++    {
++      grub_error (GRUB_ERR_BAD_ARGUMENT, N_("you need to load the kernel first"));
++      goto fail;
++    }
++
++  if (grub_initrd_init (argc, argv, &initrd_ctx))
++    goto fail;
++
++  initrd_size = grub_get_initrd_size (&initrd_ctx);
++  grub_dprintf ("linux", "Loading initrd %s\n", argv[0]);
++
++  initrd_pages = (GRUB_EFI_BYTES_TO_PAGES (initrd_size));
++  initrd_mem = grub_efi_allocate_any_pages (initrd_pages);
++  if (! initrd_mem)
++    {
++      grub_error (GRUB_ERR_OUT_OF_MEMORY, "cannot allocate pages");
++      goto fail;
++    }
++
++  grub_dprintf ("linux", "initrd: [addr=0x%lx, size=0x%lx]\n",
++                (grub_uint64_t) initrd_mem, initrd_size);
++
++  if (grub_initrd_load (&initrd_ctx, initrd_mem))
++    goto fail;
++
++  initrd_start = (grub_addr_t) initrd_mem;
++
++ fail:
++  grub_initrd_close (&initrd_ctx);
++  if (initrd_mem && !initrd_start)
++    grub_efi_free_pages ((grub_addr_t) initrd_mem, initrd_pages);
++
++  return grub_errno;
++}
++
++static grub_command_t cmd_linux, cmd_initrd;
++
++GRUB_MOD_INIT (linux)
++{
++  cmd_linux = grub_register_command ("linux", grub_cmd_linux,
++				     N_("FILE [ARGS...]"), N_("Load Linux."));
++
++  cmd_initrd = grub_register_command ("initrd", grub_cmd_initrd,
++				      N_("FILE"), N_("Load initrd."));
++
++  my_mod = mod;
++}
++
++GRUB_MOD_FINI (linux)
++{
++  grub_unregister_command (cmd_linux);
++  grub_unregister_command (cmd_initrd);
++}
+diff --git a/include/grub/sw64/linux.h b/include/grub/sw64/linux.h
+new file mode 100644
+index 0000000..89f2ce1
+--- /dev/null
++++ b/include/grub/sw64/linux.h
+@@ -0,0 +1,46 @@
++#ifndef GRUB_SW_H
++#define GRUB_SW_H	1
++#define PAGE_OFFSET		0xfff0000000000000UL
++#define KTEXT_OFFSET		0xffffffff80000000UL
++#define GRUB_PRINTK_START       (PAGE_OFFSET | 0x800000)
++#define GRUB_PRINTK_SIZE	(0x20000)
++
++/* Hardcoded boot parameter address. Must match firmware/Kernel layout.
++ * If changed, GRUB may write to wrong memory.
++ */
++#define BOOT_PARAM_START	0xfff000000090a100ULL
++
++#define GRUB_ELF_SEARCH         1024
++
++static inline
++grub_uint64_t
++grub_virt_to_phys(grub_uint64_t x)
++{
++  if (x >= KTEXT_OFFSET)
++    x -= KTEXT_OFFSET;
++  else if (x >= PAGE_OFFSET)
++    x -= PAGE_OFFSET;
++
++  return x;
++}
++
++struct boot_param
++{
++  grub_uint64_t initrd_start;                   /* logical address of initrd */
++  grub_uint64_t initrd_size;                    /* size of initrd */
++  grub_uint64_t dtb_start;                      /* logical address of dtb */
++  grub_uint64_t efi_systab;                     /* logical address of EFI system table */
++  grub_uint64_t efi_memmap;                     /* logical address of EFI memory map */
++  grub_uint64_t efi_memmap_size;                /* size of EFI memory map */
++  grub_uint64_t efi_memdesc_size;               /* size of an EFI memory map descriptor */
++  grub_uint64_t efi_memdesc_version;            /* memory descriptor version */
++  grub_uint64_t command_line;                   /* logical address of cmdline */
++};
++
++struct linux_sw64_kernel_header
++{
++};
++
++#define linux_arch_kernel_header linux_sw64_kernel_header
++
++#endif
+-- 
+2.20.1
+
