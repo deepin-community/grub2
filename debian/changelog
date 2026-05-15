@@ -1,3 +1,11 @@
+grub2 (2.12-7deepin13) unstable; urgency=medium
+
+  * feat: Add SW64 arch debian package support.
+  * feat: Add sw64 to Build-Depends architecture lists and package
+    architectures.
+
+ -- lichenggang <lichenggang@uniontech.com>  Fri, 15 May 2026 14:45:11 +0800
+
 grub2 (2.12-7deepin12) unstable; urgency=medium
 
   * feat: Add SW64 arch support.
