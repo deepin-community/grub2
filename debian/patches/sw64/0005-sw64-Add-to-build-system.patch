@@ -283,13 +283,25 @@ Index: grub2-2.12/grub-core/lib/setjmp.S
  #else
  #error "Unknown target cpu type"
  #endif
+Index: grub2-2.12/include/grub/efi/pe32.h
+===================================================================
+--- grub2-2.12.orig/include/grub/efi/pe32.h
++++ grub2-2.12/include/grub/efi/pe32.h
+@@ -93,6 +93,7 @@ struct grub_pe32_coff_header
+ #define GRUB_PE32_MACHINE_RISCV32		0x5032
+ #define GRUB_PE32_MACHINE_RISCV64		0x5064
+ #define GRUB_PE32_MACHINE_ALPHA64		0x0284
++#define GRUB_PE32_MACHINE_SW_64			0x0284
+
+ #define GRUB_PE32_RELOCS_STRIPPED		0x0001
+ #define GRUB_PE32_EXECUTABLE_IMAGE		0x0002
 Index: grub2-2.12/include/grub/compiler-rt.h
 ===================================================================
 --- grub2-2.12.orig/include/grub/compiler-rt.h
 +++ grub2-2.12/include/grub/compiler-rt.h
 @@ -178,7 +178,7 @@ EXPORT_FUNC (__lshrdi3) (grub_uint64_t u
  #endif
- 
+
  #if defined (__powerpc__) || defined(__mips__) || defined(__sparc__) || \
 -    defined (__arm__) || defined(__riscv)
 +    defined (__arm__) || defined(__riscv) || defined(__sw_64__)
