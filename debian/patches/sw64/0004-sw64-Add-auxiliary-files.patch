@@ -27,7 +27,7 @@ Signed-off-by: sunway_fw <sunway_fw@wxiat.com>
  include/grub/sw64/setjmp.h         |  27 ++
  include/grub/sw64/time.h           |  28 ++
  include/grub/sw64/types.h          |  32 ++
- 19 files changed, 1572 insertions(+), 2 deletions(-)
+ 20 files changed, 1655 insertions(+), 2 deletions(-)
  create mode 100644 grub-core/kern/sw64/cache.c
  create mode 100644 grub-core/kern/sw64/cache_flush.S
  create mode 100644 grub-core/kern/sw64/dl_helper.c
@@ -45,6 +45,7 @@ Signed-off-by: sunway_fw <sunway_fw@wxiat.com>
  create mode 100644 include/grub/sw64/setjmp.h
  create mode 100644 include/grub/sw64/time.h
  create mode 100644 include/grub/sw64/types.h
+ create mode 100644 include/grub/sw64/efi/efi.h
 
 diff --git a/grub-core/kern/efi/mm.c b/grub-core/kern/efi/mm.c
 index 6a6fba8..98578f9 100644
@@ -527,7 +528,7 @@ new file mode 100644
 index 0000000..be55947
 --- /dev/null
 +++ b/grub-core/kern/sw64/efi/init.c
-@@ -0,0 +1,85 @@
+@@ -0,0 +1,86 @@
 +/* init.c - initialize a sw64-based EFI system */
 +/*
 + *  GRUB  --  GRand Unified Bootloader
@@ -553,6 +554,7 @@ index 0000000..be55947
 +#include <grub/mm.h>
 +#include <grub/time.h>
 +#include <grub/efi/efi.h>
++#include <grub/sw64/efi/efi.h>
 +#include <grub/loader.h>
 +
 +static grub_uint64_t tmr;
@@ -1744,6 +1746,101 @@ index 0000000..78b2136
 +
 +
 +#endif /* ! GRUB_TYPES_CPU_HEADER */
--- 
+diff --git a/include/grub/sw64/efi/efi.h b/include/grub/sw64/efi/efi.h
+new file mode 100644
+index 0000000..1234567
+--- /dev/null
++++ b/include/grub/sw64/efi/efi.h
+@@ -0,0 +1,83 @@
++/*
++ *  GRUB  --  GRand Unified Bootloader
++ *  Copyright (C) 2026  Free Software Foundation, Inc.
++ *
++ *  GRUB is free software: you can redistribute it and/or modify
++ *  it under the terms of the GNU General Public License as published by
++ *  the Free Software Foundation, either version 3 of the License, or
++ *  (at your option) any later version.
++ *
++ *  GRUB is distributed in the hope that it will be useful,
++ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
++ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ *  GNU General Public License for more details.
++ *
++ *  You should have received a copy of the GNU General Public License
++ *  along with GRUB.  If not, see <http://www.gnu.org/licenses/>.
++ */
++
++#ifndef GRUB_SW64_EFI_HEADER
++#define GRUB_SW64_EFI_HEADER 1
++
++#include <grub/efi/api.h>
++
++/* SW64 EFI call wrappers defined in callwrap.S */
++extern grub_efi_uint64_t sw_efi_wrap_0 (grub_efi_void_t *func);
++extern grub_efi_uint64_t sw_efi_wrap_1 (grub_efi_void_t *func, grub_efi_uint64_t a1);
++extern grub_efi_uint64_t sw_efi_wrap_2 (grub_efi_void_t *func, grub_efi_uint64_t a1,
++                                        grub_efi_uint64_t a2);
++extern grub_efi_uint64_t sw_efi_wrap_3 (grub_efi_void_t *func, grub_efi_uint64_t a1,
++                                        grub_efi_uint64_t a2, grub_efi_uint64_t a3);
++extern grub_efi_uint64_t sw_efi_wrap_4 (grub_efi_void_t *func, grub_efi_uint64_t a1,
++                                        grub_efi_uint64_t a2, grub_efi_uint64_t a3,
++                                        grub_efi_uint64_t a4);
++extern grub_efi_uint64_t sw_efi_wrap_5 (grub_efi_void_t *func, grub_efi_uint64_t a1,
++                                        grub_efi_uint64_t a2, grub_efi_uint64_t a3,
++                                        grub_efi_uint64_t a4, grub_efi_uint64_t a5);
++extern grub_efi_uint64_t sw_efi_wrap_6 (grub_efi_void_t *func, grub_efi_uint64_t a1,
++                                        grub_efi_uint64_t a2, grub_efi_uint64_t a3,
++                                        grub_efi_uint64_t a4, grub_efi_uint64_t a5,
++                                        grub_efi_uint64_t a6);
++extern grub_efi_uint64_t sw_efi_wrap_7 (grub_efi_void_t *func, grub_efi_uint64_t a1,
++                                        grub_efi_uint64_t a2, grub_efi_uint64_t a3,
++                                        grub_efi_uint64_t a4, grub_efi_uint64_t a5,
++                                        grub_efi_uint64_t a6, grub_efi_uint64_t a7);
++extern grub_efi_uint64_t sw_efi_wrap_10 (grub_efi_void_t *func, grub_efi_uint64_t a1,
++                                         grub_efi_uint64_t a2, grub_efi_uint64_t a3,
++                                         grub_efi_uint64_t a4, grub_efi_uint64_t a5,
++                                         grub_efi_uint64_t a6, grub_efi_uint64_t a7,
++                                         grub_efi_uint64_t a8, grub_efi_uint64_t a9,
++                                         grub_efi_uint64_t a10);
++
++/* EFI call macros for SW64 architecture */
++#define efi_call_0(func)                \
++  sw_efi_wrap_0((grub_efi_void_t *)(func))
++#define efi_call_1(func,a1)             \
++  sw_efi_wrap_1((grub_efi_void_t *)(func), (grub_efi_uint64_t)(a1))
++#define efi_call_2(func,a1,a2)          \
++  sw_efi_wrap_2((grub_efi_void_t *)(func), (grub_efi_uint64_t)(a1), \
++                (grub_efi_uint64_t)(a2))
++#define efi_call_3(func,a1,a2,a3)       \
++  sw_efi_wrap_3((grub_efi_void_t *)(func), (grub_efi_uint64_t)(a1), \
++                (grub_efi_uint64_t)(a2), (grub_efi_uint64_t)(a3))
++#define efi_call_4(func,a1,a2,a3,a4)    \
++  sw_efi_wrap_4((grub_efi_void_t *)(func), (grub_efi_uint64_t)(a1), \
++                (grub_efi_uint64_t)(a2), (grub_efi_uint64_t)(a3), \
++                (grub_efi_uint64_t)(a4))
++#define efi_call_5(func,a1,a2,a3,a4,a5) \
++  sw_efi_wrap_5((grub_efi_void_t *)(func), (grub_efi_uint64_t)(a1), \
++                (grub_efi_uint64_t)(a2), (grub_efi_uint64_t)(a3), \
++                (grub_efi_uint64_t)(a4), (grub_efi_uint64_t)(a5))
++#define efi_call_6(func,a1,a2,a3,a4,a5,a6) \
++  sw_efi_wrap_6((grub_efi_void_t *)(func), (grub_efi_uint64_t)(a1), \
++                (grub_efi_uint64_t)(a2), (grub_efi_uint64_t)(a3), \
++                (grub_efi_uint64_t)(a4), (grub_efi_uint64_t)(a5), \
++                (grub_efi_uint64_t)(a6))
++#define efi_call_7(func,a1,a2,a3,a4,a5,a6,a7) \
++  sw_efi_wrap_7((grub_efi_void_t *)(func), (grub_efi_uint64_t)(a1), \
++                (grub_efi_uint64_t)(a2), (grub_efi_uint64_t)(a3), \
++                (grub_efi_uint64_t)(a4), (grub_efi_uint64_t)(a5), \
++                (grub_efi_uint64_t)(a6), (grub_efi_uint64_t)(a7))
++#define efi_call_10(func,a1,a2,a3,a4,a5,a6,a7,a8,a9,a10) \
++  sw_efi_wrap_10((grub_efi_void_t *)(func), (grub_efi_uint64_t)(a1), \
++                 (grub_efi_uint64_t)(a2), (grub_efi_uint64_t)(a3), \
++                 (grub_efi_uint64_t)(a4), (grub_efi_uint64_t)(a5), \
++                 (grub_efi_uint64_t)(a6), (grub_efi_uint64_t)(a7), \
++                 (grub_efi_uint64_t)(a8), (grub_efi_uint64_t)(a9), \
++                 (grub_efi_uint64_t)(a10))
++
++#endif /* GRUB_SW64_EFI_HEADER */
+--
 2.20.1
 

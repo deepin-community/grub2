@@ -266,7 +266,7 @@ debian/stamps/build-grub-xen-i386 debian/stamps/build-grub-xen-amd64 debian/stam
 	dh_auto_build
 	touch $@
 
-debian/stamps/build-grub-efi-ia32 debian/stamps/build-grub-efi-ia64 debian/stamps/build-grub-efi-arm debian/stamps/build-grub-efi-loong64 debian/stamps/build-grub-efi-amd64 debian/stamps/build-grub-efi-arm64 debian/stamps/build-grub-efi-riscv64 debian/stamps/build-grub-efi-sw64: debian/stamps/build-%: debian/stamps/configure-% debian/stamps/build-grub-$(COMMON_PLATFORM)
+debian/stamps/build-grub-efi-ia32 debian/stamps/build-grub-efi-ia64 debian/stamps/build-grub-efi-arm debian/stamps/build-grub-efi-loong64 debian/stamps/build-grub-efi-amd64 debian/stamps/build-grub-efi-arm64 debian/stamps/build-grub-efi-riscv64 debian/stamps/build-grub-efi-sw64 debian/stamps/build-grub-efi-mips64el: debian/stamps/build-%: debian/stamps/configure-% debian/stamps/build-grub-$(COMMON_PLATFORM)
 	dh_auto_build
 	grub_dir=`mktemp -d` ; \
 	sed -e "s/@DEB_VERSION@/$(deb_version)/g" \

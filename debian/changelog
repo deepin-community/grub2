@@ -4,7 +4,7 @@ grub2 (2.12-7deepin14) unstable; urgency=medium
     target
   * fix: Add build rule for Xen targets (grub-xen-i386, grub-xen-amd64,
     grub-xen-pvh-i386)
-
+  * fix: Add missing efi_call macros for SW64 architecture in efi.h
 
  -- lichenggang <lichenggang@uniontech.com>  Fri, 15 May 2026 16:26:00 +0800
 
