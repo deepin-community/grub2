@@ -1776,27 +1776,27 @@ index 0000000..1234567
 +#include <grub/efi/api.h>
 +
 +/* SW64 EFI call wrappers defined in callwrap.S */
-+extern grub_efi_uint64_t sw_efi_wrap_0 (grub_efi_void_t *func);
-+extern grub_efi_uint64_t sw_efi_wrap_1 (grub_efi_void_t *func, grub_efi_uint64_t a1);
-+extern grub_efi_uint64_t sw_efi_wrap_2 (grub_efi_void_t *func, grub_efi_uint64_t a1,
++extern grub_efi_uint64_t sw_efi_wrap_0 (void *func);
++extern grub_efi_uint64_t sw_efi_wrap_1 (void *func, grub_efi_uint64_t a1);
++extern grub_efi_uint64_t sw_efi_wrap_2 (void *func, grub_efi_uint64_t a1,
 +                                        grub_efi_uint64_t a2);
-+extern grub_efi_uint64_t sw_efi_wrap_3 (grub_efi_void_t *func, grub_efi_uint64_t a1,
++extern grub_efi_uint64_t sw_efi_wrap_3 (void *func, grub_efi_uint64_t a1,
 +                                        grub_efi_uint64_t a2, grub_efi_uint64_t a3);
-+extern grub_efi_uint64_t sw_efi_wrap_4 (grub_efi_void_t *func, grub_efi_uint64_t a1,
++extern grub_efi_uint64_t sw_efi_wrap_4 (void *func, grub_efi_uint64_t a1,
 +                                        grub_efi_uint64_t a2, grub_efi_uint64_t a3,
 +                                        grub_efi_uint64_t a4);
-+extern grub_efi_uint64_t sw_efi_wrap_5 (grub_efi_void_t *func, grub_efi_uint64_t a1,
++extern grub_efi_uint64_t sw_efi_wrap_5 (void *func, grub_efi_uint64_t a1,
 +                                        grub_efi_uint64_t a2, grub_efi_uint64_t a3,
 +                                        grub_efi_uint64_t a4, grub_efi_uint64_t a5);
-+extern grub_efi_uint64_t sw_efi_wrap_6 (grub_efi_void_t *func, grub_efi_uint64_t a1,
++extern grub_efi_uint64_t sw_efi_wrap_6 (void *func, grub_efi_uint64_t a1,
 +                                        grub_efi_uint64_t a2, grub_efi_uint64_t a3,
 +                                        grub_efi_uint64_t a4, grub_efi_uint64_t a5,
 +                                        grub_efi_uint64_t a6);
-+extern grub_efi_uint64_t sw_efi_wrap_7 (grub_efi_void_t *func, grub_efi_uint64_t a1,
++extern grub_efi_uint64_t sw_efi_wrap_7 (void *func, grub_efi_uint64_t a1,
 +                                        grub_efi_uint64_t a2, grub_efi_uint64_t a3,
 +                                        grub_efi_uint64_t a4, grub_efi_uint64_t a5,
 +                                        grub_efi_uint64_t a6, grub_efi_uint64_t a7);
-+extern grub_efi_uint64_t sw_efi_wrap_10 (grub_efi_void_t *func, grub_efi_uint64_t a1,
++extern grub_efi_uint64_t sw_efi_wrap_10 (void *func, grub_efi_uint64_t a1,
 +                                         grub_efi_uint64_t a2, grub_efi_uint64_t a3,
 +                                         grub_efi_uint64_t a4, grub_efi_uint64_t a5,
 +                                         grub_efi_uint64_t a6, grub_efi_uint64_t a7,
@@ -1805,35 +1805,35 @@ index 0000000..1234567
 +
 +/* EFI call macros for SW64 architecture */
 +#define efi_call_0(func)                \
-+  sw_efi_wrap_0((grub_efi_void_t *)(func))
++  sw_efi_wrap_0((void *)(func))
 +#define efi_call_1(func,a1)             \
-+  sw_efi_wrap_1((grub_efi_void_t *)(func), (grub_efi_uint64_t)(a1))
++  sw_efi_wrap_1((void *)(func), (grub_efi_uint64_t)(a1))
 +#define efi_call_2(func,a1,a2)          \
-+  sw_efi_wrap_2((grub_efi_void_t *)(func), (grub_efi_uint64_t)(a1), \
++  sw_efi_wrap_2((void *)(func), (grub_efi_uint64_t)(a1), \
 +                (grub_efi_uint64_t)(a2))
 +#define efi_call_3(func,a1,a2,a3)       \
-+  sw_efi_wrap_3((grub_efi_void_t *)(func), (grub_efi_uint64_t)(a1), \
++  sw_efi_wrap_3((void *)(func), (grub_efi_uint64_t)(a1), \
 +                (grub_efi_uint64_t)(a2), (grub_efi_uint64_t)(a3))
 +#define efi_call_4(func,a1,a2,a3,a4)    \
-+  sw_efi_wrap_4((grub_efi_void_t *)(func), (grub_efi_uint64_t)(a1), \
++  sw_efi_wrap_4((void *)(func), (grub_efi_uint64_t)(a1), \
 +                (grub_efi_uint64_t)(a2), (grub_efi_uint64_t)(a3), \
 +                (grub_efi_uint64_t)(a4))
 +#define efi_call_5(func,a1,a2,a3,a4,a5) \
-+  sw_efi_wrap_5((grub_efi_void_t *)(func), (grub_efi_uint64_t)(a1), \
++  sw_efi_wrap_5((void *)(func), (grub_efi_uint64_t)(a1), \
 +                (grub_efi_uint64_t)(a2), (grub_efi_uint64_t)(a3), \
 +                (grub_efi_uint64_t)(a4), (grub_efi_uint64_t)(a5))
 +#define efi_call_6(func,a1,a2,a3,a4,a5,a6) \
-+  sw_efi_wrap_6((grub_efi_void_t *)(func), (grub_efi_uint64_t)(a1), \
++  sw_efi_wrap_6((void *)(func), (grub_efi_uint64_t)(a1), \
 +                (grub_efi_uint64_t)(a2), (grub_efi_uint64_t)(a3), \
 +                (grub_efi_uint64_t)(a4), (grub_efi_uint64_t)(a5), \
 +                (grub_efi_uint64_t)(a6))
 +#define efi_call_7(func,a1,a2,a3,a4,a5,a6,a7) \
-+  sw_efi_wrap_7((grub_efi_void_t *)(func), (grub_efi_uint64_t)(a1), \
++  sw_efi_wrap_7((void *)(func), (grub_efi_uint64_t)(a1), \
 +                (grub_efi_uint64_t)(a2), (grub_efi_uint64_t)(a3), \
 +                (grub_efi_uint64_t)(a4), (grub_efi_uint64_t)(a5), \
 +                (grub_efi_uint64_t)(a6), (grub_efi_uint64_t)(a7))
 +#define efi_call_10(func,a1,a2,a3,a4,a5,a6,a7,a8,a9,a10) \
-+  sw_efi_wrap_10((grub_efi_void_t *)(func), (grub_efi_uint64_t)(a1), \
++  sw_efi_wrap_10((void *)(func), (grub_efi_uint64_t)(a1), \
 +                 (grub_efi_uint64_t)(a2), (grub_efi_uint64_t)(a3), \
 +                 (grub_efi_uint64_t)(a4), (grub_efi_uint64_t)(a5), \
 +                 (grub_efi_uint64_t)(a6), (grub_efi_uint64_t)(a7), \
