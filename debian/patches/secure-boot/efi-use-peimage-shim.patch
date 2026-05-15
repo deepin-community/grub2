@@ -58,10 +58,11 @@ index 333d3fe..7e7e360 100644
 +};
 +
 +
- module = {
-   name = fdt;
-   efi = loader/efi/fdt.c;
-diff --git a/grub-core/loader/efi/peimage.c b/grub-core/loader/efi/peimage.c
++module = {
++  name = fdt;
++  efi = loader/efi/fdt.c;
++
+ diff --git a/grub-core/loader/efi/peimage.c b/grub-core/loader/efi/peimage.c
 new file mode 100644
 index 0000000..b04fc61
 --- /dev/null
