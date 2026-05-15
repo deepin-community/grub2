@@ -205,7 +205,7 @@ index 393ccde..ac1b980 100644
  };
  
  module = {
-@@ -1904,6 +1921,7 @@ module = {
+@@ -1904,6 +1922,7 @@ module = {
    loongarch64 = loader/efi/linux.c;
    riscv32 = loader/efi/linux.c;
    riscv64 = loader/efi/linux.c;
@@ -213,15 +213,8 @@ index 393ccde..ac1b980 100644
    i386_efi = loader/efi/linux.c;
    x86_64_efi = loader/efi/linux.c;
    emu = loader/emu/linux.c;
-@@ -1921,6 +1939,7 @@ module = {
-   enable = riscv32_efi;
-   enable = riscv64_efi;
-   enable = loongarch64_efi;
-+  enable = sw_64;
- };
  
- 
-@@ -2018,6 +2037,7 @@ module = {
+@@ -2018,6 +2038,7 @@ module = {
    enable = riscv64_efi;
    enable = mips;
    enable = mips64_efi;
@@ -312,18 +305,6 @@ index 17828b3..a8782fc 100644
  grub_uint32_t
  EXPORT_FUNC(__bswapsi2) (grub_uint32_t u);
  
-diff --git a/include/grub/efi/pe32.h b/include/grub/efi/pe32.h
-index 5609d9b..40a1c48 100644
---- a/include/grub/efi/pe32.h
-+++ b/include/grub/efi/pe32.h
-@@ -93,6 +93,7 @@ struct grub_pe32_coff_header
- #define GRUB_PE32_MACHINE_LOONGARCH64		0x6264
- #define GRUB_PE32_MACHINE_RISCV32		0x5032
- #define GRUB_PE32_MACHINE_RISCV64		0x5064
-+#define GRUB_PE32_MACHINE_SW_64                 0x0284
- 
- #define GRUB_PE32_RELOCS_STRIPPED		0x0001
- #define GRUB_PE32_EXECUTABLE_IMAGE		0x0002
 diff --git a/include/grub/util/install.h b/include/grub/util/install.h
 index 58424c5..d8501ed 100644
 --- a/include/grub/util/install.h

@@ -40,7 +40,7 @@ diff --git a/grub-core/Makefile.core.def b/grub-core/Makefile.core.def
 index 333d3fe..7e7e360 100644
 --- a/grub-core/Makefile.core.def
 +++ b/grub-core/Makefile.core.def
-@@ -1875,6 +1875,19 @@ module = {
+@@ -1875,6 +1875,20 @@ module = {
    common = lib/cmdline.c;
  };
  
@@ -58,11 +58,9 @@ index 333d3fe..7e7e360 100644
 +};
 +
 +
-+module = {
-+  name = fdt;
-+  efi = loader/efi/fdt.c;
-+};
-+
+ module = {
+   name = fdt;
+   efi = loader/efi/fdt.c;
 diff --git a/grub-core/loader/efi/peimage.c b/grub-core/loader/efi/peimage.c
 new file mode 100644
 index 0000000..b04fc61
@@ -135,8 +133,6 @@ index 0000000..b04fc61
 +  GRUB_PE32_MACHINE_RISCV64,
 +#elif defined(__loongarch__) && __loongarch_grlen == 64
 +  GRUB_PE32_MACHINE_LOONGARCH64,
-+#elif defined(__sw_64__)
-+  GRUB_PE32_MACHINE_ALPHA64,
 +#endif
 +};
 +
