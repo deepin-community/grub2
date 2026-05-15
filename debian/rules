@@ -151,6 +151,8 @@ debian/stamps/build-grub-efi-loong64 install/grub-efi-loong64: export SB_PLATFOR
 debian/stamps/build-grub-efi-loong64 install/grub-efi-loong64: export SB_EFI_NAME := loongarch64
 debian/stamps/build-grub-efi-riscv64 install/grub-efi-riscv64: export SB_PLATFORM := riscv64-efi
 debian/stamps/build-grub-efi-riscv64 install/grub-efi-riscv64: export SB_EFI_NAME := riscv64
+debian/stamps/build-grub-efi-mips64el install/grub-efi-mips64el: export SB_PLATFORM := mips64el-efi
+debian/stamps/build-grub-efi-mips64el install/grub-efi-mips64el: export SB_EFI_NAME := mips64el
 debian/stamps/build-grub-efi-sw64 install/grub-efi-sw64: export SB_PLATFORM := sw64-efi
 debian/stamps/build-grub-efi-sw64 install/grub-efi-sw64: export SB_EFI_NAME := sw64
 SB_PACKAGE :=

@@ -54,6 +54,7 @@ index 333d3fe..7e7e360 100644
 +  enable = riscv32_efi;
 +  enable = riscv64_efi;
 +  enable = loongarch64_efi;
++  enable = sw64_efi;
 +};
 +
 +
@@ -132,6 +133,8 @@ index 0000000..b04fc61
 +  GRUB_PE32_MACHINE_RISCV64,
 +#elif defined(__loongarch__) && __loongarch_grlen == 64
 +  GRUB_PE32_MACHINE_LOONGARCH64,
++#elif defined(__sw_64__)
++  GRUB_PE32_MACHINE_ALPHA64,
 +#endif
 +};
 +
