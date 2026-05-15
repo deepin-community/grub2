@@ -1751,7 +1751,7 @@ new file mode 100644
 index 0000000..1234567
 --- /dev/null
 +++ b/include/grub/sw64/efi/efi.h
-@@ -0,0 +1,83 @@
+@@ -0,0 +1,89 @@
 +/*
 + *  GRUB  --  GRand Unified Bootloader
 + *  Copyright (C) 2026  Free Software Foundation, Inc.
