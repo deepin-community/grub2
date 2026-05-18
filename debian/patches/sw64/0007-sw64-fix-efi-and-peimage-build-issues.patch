@@ -1,0 +1,12 @@
+diff --git a/grub-core/loader/efi/peimage.c b/grub-core/loader/efi/peimage.c
+index xxxxxxx..xxxxxxx 100644
+--- a/grub-core/loader/efi/peimage.c
++++ b/grub-core/loader/efi/peimage.c
+@@ -63,6 +67,8 @@ static grub_uint16_t machines[] = {
+   GRUB_PE32_MACHINE_RISCV64,
+ #elif defined(__loongarch__) && __loongarch_grlen == 64
+   GRUB_PE32_MACHINE_LOONGARCH64,
++#elif defined(__sw_64__)
++  GRUB_PE32_MACHINE_SW_64,
+ #endif
+ };

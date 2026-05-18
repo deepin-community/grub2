@@ -1,3 +1,10 @@
+grub2 (2.12-7deepin14) unstable; urgency=medium
+
+  * fix(sw64): fix EFI call compatibility and PE machine detection
+  * sw64: Add declaration for grub_sw64_dl_get_tramp_got_size
+
+ -- lichenggang <lichenggang@deepin.org>  Mon, 18 May 2026 09:24:50 +0800
+
 grub2 (2.12-7deepin13) unstable; urgency=medium
 
   * feat: Add SW64 arch debian package support.
