@@ -1,0 +1,42 @@
+From 00f8ad96c7c2c3ff42a6cfee3f7257d00c1795d6 Mon Sep 17 00:00:00 2001
+From: Deividas Puplauskas <deividas.puplauskas@gmail.com>
+Date: Mon, 30 Mar 2026 20:23:10 +0200
+Subject: [PATCH] grub-core/disk/usbms.c (grub_usbms_attach): reuse free slots
+
+Reuse free slots from grub_usbms_devices array for attaching new
+USB mass storage devices. Same loop logic is already used in
+grub_usbms_detach.
+
+Signed-off-by: Deividas Puplauskas <deividas.puplauskas@gmail.com>
+
+Index: 00f8ad96/grub-core/disk/usbms.c
+===================================================================
+--- 00f8ad96.orig/grub-core/disk/usbms.c
++++ 00f8ad96/grub-core/disk/usbms.c
+@@ -74,7 +74,6 @@ typedef struct grub_usbms_dev *grub_usbm
+ /* FIXME: remove limit.  */
+ #define MAX_USBMS_DEVICES 128
+ static grub_usbms_dev_t grub_usbms_devices[MAX_USBMS_DEVICES];
+-static int first_available_slot = 0;
+ 
+ static grub_usb_err_t
+ grub_usbms_cbi_cmd (grub_usb_device_t dev, int interface,
+@@ -149,11 +148,14 @@ grub_usbms_attach (grub_usb_device_t usb
+ 
+   grub_boot_time ("Attaching USB mass storage");
+ 
+-  if (first_available_slot == ARRAY_SIZE (grub_usbms_devices))
+-    return 0;
++  for (curnum = 0; curnum < ARRAY_SIZE (grub_usbms_devices); curnum++)
++    {
++      if (!grub_usbms_devices[curnum])
++	break;
++    }
+ 
+-  curnum = first_available_slot;
+-  first_available_slot++;
++  if (curnum == ARRAY_SIZE (grub_usbms_devices))
++    return 0;
+ 
+   interf = usbdev->config[configno].interf[interfno].descif;
+ 

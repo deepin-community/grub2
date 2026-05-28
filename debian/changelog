@@ -1,3 +1,11 @@
+grub2 (2.12-7deepin15) unstable; urgency=medium
+
+  * Backport upstream fix from grub2:
+  * 00f8ad96: grub-core/disk/usbms.c (grub_usbms_attach): reuse free
+    slots
+
+ -- jiabowen <jiabowen@uniontech.com>  Thu, 28 May 2026 14:35:51 +0800
+
 grub2 (2.12-7deepin14) unstable; urgency=medium
 
   * fix(sw64): fix EFI call compatibility and PE machine detection
