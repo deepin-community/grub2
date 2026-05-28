@@ -1,0 +1,48 @@
+From 7b037605ecbcdb4649fcb31fd8265e4169365518 Mon Sep 17 00:00:00 2001
+From: Egor Ignatov <egori@altlinux.org>
+Date: Thu, 19 Mar 2026 16:57:04 +0500
+Subject: [PATCH] commands/bli: Do not treat non-GPT partitions as an error
+
+Currently, get_part_uuid() returns GRUB_ERR_BAD_PART_TABLE when the
+boot device uses a non-GPT partition table (e.g., MBR). This causes
+set_loader_device_part_uuid() to report a spurious error message to the
+user, even though the boot continues normally.
+
+As documented, the bli module ignores non-GPT partitions and simply
+does not set LoaderDevicePartUUID in this case. Align the code with
+this behavior.
+
+Fix get_part_uuid() to return GRUB_ERR_NONE with part_uuid set to NULL
+when the partition is not GPT, and adjust set_loader_device_part_uuid()
+to only report an error when get_part_uuid() actually fails.
+
+Signed-off-by: Egor Ignatov <egori@altlinux.org>
+
+Index: 7b037605/grub-core/commands/bli.c
+===================================================================
+--- 7b037605.orig/grub-core/commands/bli.c
++++ 7b037605/grub-core/commands/bli.c
+@@ -58,9 +58,11 @@ get_part_uuid (const char *device_name,
+ 
+   if (grub_strcmp (device->disk->partition->partmap->name, "gpt") != 0)
+     {
+-      status = grub_error (GRUB_ERR_BAD_PART_TABLE,
+-			   N_("this is not a GPT partition table: %s"), device_name);
+-      goto fail;
++      grub_dprintf ("bli", "%s is not a GPT partition, partuuid skipped\n", device_name);
++      *part_uuid = NULL;
++      grub_disk_close (disk);
++      grub_device_close (device);
++      return GRUB_ERR_NONE;
+     }
+ 
+   if (grub_disk_read (disk, device->disk->partition->offset,
+@@ -103,7 +105,7 @@ set_loader_device_part_uuid (void)
+     status = grub_efi_set_variable_to_string ("LoaderDevicePartUUID", &bli_vendor_guid, part_uuid,
+ 					      GRUB_EFI_VARIABLE_BOOTSERVICE_ACCESS |
+ 					      GRUB_EFI_VARIABLE_RUNTIME_ACCESS);
+-  else
++  else if (status != GRUB_ERR_NONE)
+     grub_error (status, N_("unable to determine partition UUID of boot device"));
+ 
+   grub_free (part_uuid);
