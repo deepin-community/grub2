@@ -1,0 +1,41 @@
+From 26f82dc615c8eedaa4d9fc2c5ba9732dc81fa13d Mon Sep 17 00:00:00 2001
+From: Egor Ignatov <egori@altlinux.org>
+Date: Tue, 17 Mar 2026 11:14:04 +0500
+Subject: [PATCH] templates: Use findfs for UUID/PARTUUID device lookup
+
+Replace test -e checks against /dev/disk/by-uuid and /dev/disk/by-partuuid
+symlinks with findfs, which uses libblkid and /sys/block scanning to resolve
+devices even when udev symlinks are missing.
+
+Signed-off-by: Egor Ignatov <egori@altlinux.org>
+
+Index: 26f82dc6/util/grub.d/10_linux.in
+===================================================================
+--- 26f82dc6.orig/util/grub.d/10_linux.in
++++ 26f82dc6/util/grub.d/10_linux.in
+@@ -75,8 +75,8 @@ fi
+ if ( [ "x${GRUB_DEVICE_UUID}" = "x" ] && [ "x${GRUB_DEVICE_PARTUUID}" = "x" ] ) \
+     || ( [ "x${GRUB_DISABLE_LINUX_UUID}" = "xtrue" ] \
+ 	&& [ "x${GRUB_DISABLE_LINUX_PARTUUID}" = "xtrue" ] ) \
+-    || ( ! test -e "/dev/disk/by-uuid/${GRUB_DEVICE_UUID}" \
+-	&& ! test -e "/dev/disk/by-partuuid/${GRUB_DEVICE_PARTUUID}" ) \
++    || ( ! findfs UUID="${GRUB_DEVICE_UUID}" > /dev/null 2>&1 \
++	&& ! findfs PARTUUID="${GRUB_DEVICE_PARTUUID}" > /dev/null 2>&1 ) \
+     || ( test -e "${GRUB_DEVICE}" && uses_abstraction "${GRUB_DEVICE}" lvm ); then
+   LINUX_ROOT_DEVICE=${GRUB_DEVICE}
+ elif [ "x${GRUB_DEVICE_UUID}" = "x" ] \
+Index: 26f82dc6/util/grub.d/20_linux_xen.in
+===================================================================
+--- 26f82dc6.orig/util/grub.d/20_linux_xen.in
++++ 26f82dc6/util/grub.d/20_linux_xen.in
+@@ -59,8 +59,8 @@ esac
+ if ( [ "x${GRUB_DEVICE_UUID}" = "x" ] && [ "x${GRUB_DEVICE_PARTUUID}" = "x" ] ) \
+     || ( [ "x${GRUB_DISABLE_LINUX_UUID}" = "xtrue" ] \
+ 	&& [ "x${GRUB_DISABLE_LINUX_PARTUUID}" = "xtrue" ] ) \
+-    || ( ! test -e "/dev/disk/by-uuid/${GRUB_DEVICE_UUID}" \
+-	&& ! test -e "/dev/disk/by-partuuid/${GRUB_DEVICE_PARTUUID}" ) \
++    || ( ! findfs UUID="${GRUB_DEVICE_UUID}" > /dev/null 2>&1 \
++	&& ! findfs PARTUUID="${GRUB_DEVICE_PARTUUID}" > /dev/null 2>&1 ) \
+     || ( test -e "${GRUB_DEVICE}" && uses_abstraction "${GRUB_DEVICE}" lvm ); then
+   LINUX_ROOT_DEVICE=${GRUB_DEVICE}
+ elif [ "x${GRUB_DEVICE_UUID}" = "x" ] \
