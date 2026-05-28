@@ -1,3 +1,10 @@
+grub2 (2.12-7deepin15) unstable; urgency=medium
+
+  * Backport upstream fix from grub2:
+  * 7115cf2a: util/config: Fix memory leak in grub_util_parse_config
+
+ -- jiabowen <jiabowen@uniontech.com>  Thu, 28 May 2026 14:35:45 +0800
+
 grub2 (2.12-7deepin14) unstable; urgency=medium
 
   * fix(sw64): fix EFI call compatibility and PE machine detection

@@ -1,0 +1,25 @@
+From 7115cf2ad9124add0294b9fcd72a9cc30cd9f3cb Mon Sep 17 00:00:00 2001
+From: Srish Srinivasan <ssrish@linux.ibm.com>
+Date: Fri, 27 Mar 2026 12:19:44 +0530
+Subject: [PATCH] util/config: Fix memory leak in grub_util_parse_config
+
+In grub_util_parse_config(), "buffer" is set to NULL before the call
+to getline(). So, getline() will allocate memory for "buffer". But,
+grub_util_parse_config() does not free "buffer" before returning.
+This results in a memory leak.
+
+Free "buffer" before returning to fix this problem.
+
+Signed-off-by: Srish Srinivasan <ssrish@linux.ibm.com>
+
+Index: 7115cf2a/util/config.c
+===================================================================
+--- 7115cf2a.orig/util/config.c
++++ 7115cf2a/util/config.c
+@@ -117,5 +117,6 @@ grub_util_parse_config (FILE *f, struct
+ 	  *optr = '\0';
+ 	}
+     }
++  free (buffer);
+ }
+ 
