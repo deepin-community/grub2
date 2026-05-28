@@ -1,0 +1,49 @@
+From d67dec8d2d16c750fce58c174c7fe809b25cfb40 Mon Sep 17 00:00:00 2001
+From: Srish Srinivasan <ssrish@linux.ibm.com>
+Date: Fri, 17 Apr 2026 13:11:52 +0530
+Subject: [PATCH] osdep/unix/getroot: fix resource leak bugs
+
+In grub_util_find_root_devices_from_poolname(), the file stream "fp"
+is never closed once opened. Only the underlying file descriptor "fd"
+is closed. This results in a resource leak.
+
+In grub_util_pull_lvm_by_command(), the file stream "vgs" is never
+closed once opened. Only the underlying file descriptor "fd" is
+closed. This results in a resource leak.
+
+Close the file stream pointers to ensure proper cleanup of the stream
+and the underlying file descriptor.
+
+Signed-off-by: Srish Srinivasan <ssrish@linux.ibm.com>
+Reviewed-by: Sudhakar Kuppusamy <sudhakar@linux.ibm.com>
+Reviewed-by: Neal Gompa <neal@gompa.dev>
+Part-of: <https://gitlab.freedesktop.org/gnu-grub/grub/-/merge_requests/105>
+
+Index: d67dec8d/grub-core/osdep/unix/getroot.c
+===================================================================
+--- d67dec8d.orig/grub-core/osdep/unix/getroot.c
++++ d67dec8d/grub-core/osdep/unix/getroot.c
+@@ -313,7 +313,10 @@ grub_util_find_root_devices_from_poolnam
+     }
+ 
+  out:
+-  close (fd);
++  if (fp)
++    fclose (fp);
++  else
++    close (fd);
+   waitpid (pid, NULL, 0);
+ #endif
+   if (devices)
+@@ -660,7 +663,10 @@ grub_util_pull_lvm_by_command (const cha
+     }
+ 
+ out:
+-  close (fd);
++  if (vgs)
++    fclose (vgs);
++  else
++    close (fd);
+   waitpid (pid, NULL, 0);
+   free (buf);
+   free (vgid);
