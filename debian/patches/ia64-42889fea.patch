@@ -1,0 +1,25 @@
+From 42889fea35c0e79ca9849951f8a9696ae0cb84b3 Mon Sep 17 00:00:00 2001
+From: Collin Funk <collin.funk1@gmail.com>
+Date: Sun, 4 May 2025 21:53:11 -0700
+Subject: [PATCH] ia64: Fix left shift overflow.
+
+* grub-core/kern/ia64/dl_helper.c (grub_ia64_set_immu64): Make constant
+unsigned.  This change was also done in Binutils, where this code
+originates from, in commit 108f6f97bd862e969f898c1347903ae1cf38ead4.
+
+Signed-off-by: Collin Funk <collin.funk1@gmail.com>
+Part-of: <https://gitlab.freedesktop.org/gnu-grub/grub/-/merge_requests/40>
+
+Index: 42889fea/grub-core/kern/ia64/dl_helper.c
+===================================================================
+--- 42889fea.orig/grub-core/kern/ia64/dl_helper.c
++++ 42889fea/grub-core/kern/ia64/dl_helper.c
+@@ -46,7 +46,7 @@ grub_ia64_set_immu64 (grub_addr_t addr,
+      slot 2: bits 23..63 in t1 */
+ 
+   /* First, clear the bits that form the 64 bit constant.  */
+-  t0 &= ~(0x3ffffLL << 46);
++  t0 &= ~(0x3ffffULL << 46);
+   t1 &= ~(0x7fffffLL
+ 	  | ((  (0x07fLL << 13) | (0x1ffLL << 27)
+ 		| (0x01fLL << 22) | (0x001LL << 21)
