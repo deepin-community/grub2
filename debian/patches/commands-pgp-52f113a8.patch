@@ -1,0 +1,28 @@
+From 52f113a86ebb0dde872e9cc7a11e667edb623a37 Mon Sep 17 00:00:00 2001
+From: Deividas Puplauskas <deividas.puplauskas@gmail.com>
+Date: Fri, 3 Apr 2026 23:46:32 +0200
+Subject: [PATCH] commands/pgp: fix memory leaks in grub_verify_signature
+
+Free readbuf in both the success path and fail path.
+
+Signed-off-by: Deividas Puplauskas <deividas.puplauskas@gmail.com>
+
+Index: 52f113a8/grub-core/commands/pgp.c
+===================================================================
+--- 52f113a8.orig/grub-core/commands/pgp.c
++++ 52f113a8/grub-core/commands/pgp.c
+@@ -718,11 +718,13 @@ grub_verify_signature (grub_file_t f, co
+ 	break;
+       err = grub_pubkey_write (&ctxt, readbuf, r);
+       if (err)
+-	return err;
++	goto fail;
+     }
+ 
+   grub_verify_signature_real (&ctxt, pkey);
+  fail:
++  if (readbuf)
++    grub_free(readbuf);
+   grub_pubkey_close_real (&ctxt);
+   return grub_errno;
+ }
