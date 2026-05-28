@@ -1,0 +1,35 @@
+From dd6cb6deb91402e37f755aa3f79056f5665cf2f9 Mon Sep 17 00:00:00 2001
+From: khaalid cali <khaliidcaliy@gmail.com>
+Date: Tue, 20 May 2025 17:42:05 +0000
+Subject: [PATCH] disk/efi/efidisk: Fix memory leak
+
+Free "dp" in case of failure.
+
+Signed-off-by: Khalid Ali <khaliidcaliy@gmail.com>
+
+Index: dd6cb6de/grub-core/disk/efi/efidisk.c
+===================================================================
+--- dd6cb6de.orig/grub-core/disk/efi/efidisk.c
++++ dd6cb6de/grub-core/disk/efi/efidisk.c
+@@ -130,7 +130,10 @@ find_parent_device (struct grub_efidisk_
+ 
+   ldp = grub_efi_find_last_device_path (dp);
+   if (! ldp)
++  {
++    grub_free (dp);
+     return 0;
++  }
+ 
+   ldp->type = GRUB_EFI_END_DEVICE_PATH_TYPE;
+   ldp->subtype = GRUB_EFI_END_ENTIRE_DEVICE_PATH_SUBTYPE;
+@@ -163,7 +166,10 @@ is_child (struct grub_efidisk_data *chil
+ 
+   ldp = grub_efi_find_last_device_path (dp);
+   if (! ldp)
++  {
++    grub_free (dp);
+     return 0;
++  }
+ 
+   ldp->type = GRUB_EFI_END_DEVICE_PATH_TYPE;
+   ldp->subtype = GRUB_EFI_END_ENTIRE_DEVICE_PATH_SUBTYPE;
