@@ -1,3 +1,9 @@
+
+grub2 (2.12-7deepin14+deepin1) unstable; urgency=medium
+
+  * Use 32-bit zero idiom for shorter encoding in setjmp
+
+ -- deepin-ci-robot <packages@deepin.org>  Tue, 09 Jun 2026 09:09:16 +0800
 grub2 (2.12-7deepin14) unstable; urgency=medium
 
   * fix(sw64): fix EFI call compatibility and PE machine detection
