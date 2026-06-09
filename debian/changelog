@@ -1,3 +1,9 @@
+
+grub2 (2.12-7deepin14+deepin1) unstable; urgency=medium
+
+  * Introduce new HMAC functions to reuse buffers
+
+ -- deepin-ci-robot <packages@deepin.org>  Tue, 09 Jun 2026 07:58:12 +0800
 grub2 (2.12-7deepin14) unstable; urgency=medium
 
   * fix(sw64): fix EFI call compatibility and PE machine detection
